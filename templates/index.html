@@ -1,0 +1,1820 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IrkGames — Игровой портал и мониторинг серверов</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%236366f1'/%3E%3Cstop offset='50%25' stop-color='%238b5cf6'/%3E%3Cstop offset='100%25' stop-color='%2322d3ee'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Crect x='3' y='3' width='58' height='58' rx='13' fill='%23060914'/%3E%3Cpath d='M35 12L17 35h13l-2 17 19-23H34l1-17z' fill='%23818cf8'/%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --bg-base: #03050c;
+            --border-subtle: rgba(255, 255, 255, 0.08);
+        }
+        body {
+            background-color: var(--bg-base);
+            overflow-x: hidden;
+        }
+        .space-bg {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            overflow: hidden;
+            pointer-events: none;
+            background: radial-gradient(ellipse 90% 60% at 50% -10%, #0f1733 0%, #050814 58%, #03050c 100%);
+        }
+        .nebula {
+            position: absolute;
+            border-radius: 9999px;
+            filter: blur(120px);
+            mix-blend-mode: screen;
+            animation: nebulaDrift 20s ease-in-out infinite alternate;
+        }
+        .nebula-1 {
+            width: 680px; height: 420px;
+            top: -120px; left: 12%;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.32), rgba(139, 92, 246, 0.14) 55%, transparent 75%);
+        }
+        .nebula-2 {
+            width: 520px; height: 520px;
+            top: 22%; right: -120px;
+            background: radial-gradient(circle, rgba(34, 211, 238, 0.2), rgba(99, 102, 241, 0.12) 55%, transparent 75%);
+            animation-delay: -7s;
+        }
+        .nebula-3 {
+            width: 580px; height: 420px;
+            bottom: -120px; left: -80px;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.18), rgba(99, 102, 241, 0.1) 55%, transparent 75%);
+            animation-delay: -13s;
+        }
+        @keyframes nebulaDrift {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(35px, -25px) scale(1.08); }
+        }
+        .cyber-horizon {
+            position: absolute;
+            left: -40%; right: -40%; bottom: -10%;
+            height: 42vh;
+            background-image: 
+                linear-gradient(to right, rgba(99, 102, 241, 0.1) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(34, 211, 238, 0.1) 1px, transparent 1px);
+            background-size: 56px 42px;
+            transform: perspective(480px) rotateX(62deg);
+            transform-origin: center bottom;
+            mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.8) 10%, transparent 90%);
+            -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.8) 10%, transparent 90%);
+            animation: horizonMove 12s linear infinite;
+            transition: opacity 0.8s ease;
+        }
+        @keyframes horizonMove {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 42px; }
+        }
+        .bg-vignette {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 50% 45%, transparent 42%, rgba(3, 5, 12, 0.85) 100%);
+        }
+        .glass-panel {
+            background: linear-gradient(135deg, rgba(13, 19, 38, 0.76) 0%, rgba(7, 10, 22, 0.89) 100%);
+            backdrop-filter: blur(22px);
+            -webkit-backdrop-filter: blur(22px);
+            border: 1px solid var(--border-subtle);
+            box-shadow: 0 10px 32px -10px rgba(0, 0, 0, 0.78), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+            transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+        .glass-panel:hover {
+            border-color: rgba(255, 255, 255, 0.16);
+            box-shadow: 0 18px 42px -12px rgba(0, 0, 0, 0.9), 0 0 24px -6px rgba(99, 102, 241, 0.22), inset 0 1px 0 0 rgba(255, 255, 255, 0.15);
+        }
+        @keyframes slideUpFade {
+            0% { opacity: 0; transform: translateY(16px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .animate-reveal {
+            opacity: 0;
+            animation: slideUpFade 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes logoFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-3px); }
+        }
+        .logo-float {
+            animation: logoFloat 4s ease-in-out infinite;
+        }
+        @keyframes scanBeam {
+            0% { transform: translateX(-100%) skewX(-25deg); opacity: 0; }
+            30% { opacity: 0.4; }
+            70% { opacity: 0.4; }
+            100% { transform: translateX(350%) skewX(-25deg); opacity: 0; }
+        }
+        .scan-beam {
+            position: absolute;
+            top: 0; bottom: 0; left: 0;
+            width: 30%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.07), transparent);
+            pointer-events: none;
+            animation: scanBeam 7s ease-in-out infinite;
+        }
+        @keyframes barShimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        .bar-animated {
+            background-size: 200% 100%;
+            animation: barShimmer 3.5s linear infinite;
+        }
+        @keyframes modalPop {
+            0% { opacity: 0; transform: scale(0.94) translateY(8px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .modal-animate {
+            animation: modalPop 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen font-sans antialiased selection:bg-indigo-500/30 selection:text-indigo-200">
+    <div class="space-bg">
+        <div class="nebula nebula-1"></div>
+        <div class="nebula nebula-2"></div>
+        <div class="nebula nebula-3"></div>
+        <div id="cyber-horizon" class="cyber-horizon"></div>
+        <canvas id="space-canvas" class="absolute inset-0 w-full h-full"></canvas>
+        <div class="bg-vignette"></div>
+    </div>
+
+    <div id="toast" class="fixed bottom-5 right-5 z-50 pointer-events-none opacity-0 translate-y-3 transition-all duration-300">
+        <div class="glass-panel px-4 py-2.5 rounded-xl border border-emerald-500/30 flex items-center gap-2.5 text-xs font-semibold text-emerald-300 shadow-2xl">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <span id="toast-text">Скопировано</span>
+        </div>
+    </div>
+
+    <div class="relative max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-11">
+        <!-- Шапка портала -->
+        <header class="animate-reveal flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 mb-6 border-b border-white/[0.08]" style="animation-delay: 0.04s;">
+            <div class="flex items-center gap-3.5">
+                <div class="logo-float relative w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-500 via-violet-500 to-cyan-400 p-[1px] shadow-lg shadow-indigo-500/35 shrink-0">
+                    <div class="w-full h-full rounded-[15px] bg-[#060914]/95 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight bg-gradient-to-r from-white via-indigo-100 to-indigo-300 bg-clip-text text-transparent">
+                            IrkGames
+                        </h1>
+                        <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-md bg-indigo-500/15 text-indigo-300 border border-indigo-400/25">
+                            Network
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-0.5">Игровое сообщество Иркутска • Мониторинг серверов 24/7</p>
+                </div>
+            </div>
+
+            <!-- Живые счетчики: Серверы, Игроки, Discord-голос -->
+            <div class="flex flex-wrap items-center gap-2.5 self-start md:self-auto">
+                <!-- Счетчики серверов и игроков -->
+                <div class="glass-panel flex items-center gap-4 rounded-2xl px-4 py-2.5">
+                    <div class="flex items-center gap-2.5">
+                        <span class="relative flex h-2.5 w-2.5">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                        </span>
+                        <div>
+                            <div class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Серверы</div>
+                            <div id="total-servers" class="text-sm font-bold font-mono text-white leading-none mt-0.5">— / {{ servers|length }}</div>
+                        </div>
+                    </div>
+                    <div class="h-7 w-px bg-white/[0.08]"></div>
+                    <div class="flex items-center gap-2.5">
+                        <div>
+                            <div class="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">В игре</div>
+                            <div id="total-players" class="text-sm font-bold font-mono text-indigo-300 leading-none mt-0.5">—</div>
+                        </div>
+                    </div>
+                    <div class="h-7 w-px bg-white/[0.08]"></div>
+                    <button id="manual-refresh-btn" onclick="manualRefresh()" title="Обновить статус серверов сейчас" class="p-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.12] text-slate-300 hover:text-white transition active:scale-90">
+                        <svg id="refresh-icon" class="w-4 h-4 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Единая панель навигации: Вкладки + Соцсети -->
+        <div class="animate-reveal flex flex-col lg:flex-row lg:items-center justify-between gap-3.5 mb-5" style="animation-delay: 0.08s;">
+            <nav class="flex flex-wrap items-center gap-2">
+                <button onclick="filterCategory('all', this)" class="tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 bg-indigo-600 text-white shadow-lg shadow-indigo-600/25 border border-indigo-400/30">
+                    Обзор <span class="ml-1 opacity-75 font-mono">{{ servers|length }}</span>
+                </button>
+                {% for grp in groups %}
+                <button onclick="filterCategory('{{ grp.id }}', this)" class="tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 bg-slate-900/65 hover:bg-slate-800/80 text-slate-300 hover:text-white border border-white/[0.08] backdrop-blur-md">
+                    {{ grp.title }} <span class="ml-1 text-slate-500 font-mono">{{ grp.servers|length }}</span>
+                </button>
+                {% endfor %}
+                {% if news %}
+                <button onclick="filterCategory('news', this)" class="tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 bg-slate-900/65 hover:bg-slate-800/80 text-slate-300 hover:text-white border border-white/[0.08] backdrop-blur-md">
+                    Новости <span class="ml-1 text-indigo-400 font-mono">{{ news|length }}</span>
+                </button>
+                {% endif %}
+            </nav>
+
+            <!-- Единые стеклянные кнопки соцсетей -->
+            <div class="flex flex-wrap items-center gap-1.5">
+                <a href="https://discord.gg/ZfDzahnXyJ" target="_blank" rel="noopener noreferrer"
+                   class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/65 hover:bg-indigo-500/20 text-slate-300 hover:text-indigo-200 border border-white/[0.08] hover:border-indigo-400/40 backdrop-blur-md text-xs font-medium transition-all">
+                    <svg class="w-3.5 h-3.5 text-indigo-400" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+                    </svg>
+                    <span>Discord</span>
+                </a>
+
+                <a href="https://t.me/Irk_Games" target="_blank" rel="noopener noreferrer"
+                   class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/65 hover:bg-sky-500/20 text-slate-300 hover:text-sky-200 border border-white/[0.08] hover:border-sky-400/40 backdrop-blur-md text-xs font-medium transition-all">
+                    <svg class="w-3.5 h-3.5 text-sky-400" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+                    </svg>
+                    <span>Telegram</span>
+                </a>
+
+                <a href="https://steamcommunity.com/groups/IrkGames" target="_blank" rel="noopener noreferrer"
+                   class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/65 hover:bg-indigo-500/20 text-slate-300 hover:text-indigo-200 border border-white/[0.08] hover:border-indigo-400/40 backdrop-blur-md text-xs font-medium transition-all">
+                    <svg class="w-3.5 h-3.5 text-slate-300" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2a10 10 0 0 0-9.95 9.05l5.35 2.21a2.84 2.84 0 0 1 1.6-.49l2.43-3.52v-.05a3.79 3.79 0 1 1 3.79 3.79h-.09l-3.46 2.47a2.85 2.85 0 0 1-5.66.45L2.3 14.35A10 10 0 1 0 12 2z"/>
+                    </svg>
+                    <span>Steam</span>
+                </a>
+
+                <a href="https://lolka.gg/pTL3SjwvD" target="_blank" rel="noopener noreferrer"
+                   class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/65 hover:bg-fuchsia-500/20 text-slate-300 hover:text-fuchsia-200 border border-white/[0.08] hover:border-fuchsia-400/40 backdrop-blur-md text-xs font-medium transition-all">
+                    <svg class="w-3.5 h-3.5 text-fuchsia-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span>Lolka</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Строка поиска и фильтр «Только онлайн» -->
+        <div class="animate-reveal flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 mb-7" style="animation-delay: 0.1s;">
+            <div class="relative flex-1">
+                <svg class="w-3.5 h-3.5 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <input id="server-search" type="text" oninput="applyFilters()" placeholder="Поиск по названию сервера, карте, кампании, игроку или IP..."
+                       class="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-900/65 backdrop-blur-md border border-white/[0.08] text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500/60 transition">
+            </div>
+            <button id="online-only-btn" onclick="toggleOnlineOnly(this)" class="inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900/65 hover:bg-slate-800/80 border border-white/[0.08] backdrop-blur-md text-xs font-medium text-slate-300 transition shrink-0">
+                <span id="online-only-dot" class="w-2 h-2 rounded-full bg-slate-600 transition-colors"></span>
+                <span>Только онлайн</span>
+            </button>
+        </div>
+
+        <!-- Блок новостей проекта -->
+        {% if news %}
+        <section class="game-section animate-reveal mb-9" data-category="news" style="animation-delay: 0.12s;">
+            <div class="flex items-center justify-between mb-3 px-1">
+                <div class="flex items-center gap-2.5">
+                    <span class="w-6 h-6 rounded-lg border bg-indigo-500/15 text-indigo-400 border-indigo-500/25 flex items-center justify-center">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/></svg>
+                    </span>
+                    <h2 class="text-sm font-bold text-white tracking-wide">Новости и объявления</h2>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                {% for item in news %}
+                {% if item.tag_color == 'emerald' %}
+                    {% set tag_cls = 'bg-emerald-500/15 text-emerald-300 border-emerald-500/25' %}
+                {% elif item.tag_color == 'amber' %}
+                    {% set tag_cls = 'bg-amber-500/15 text-amber-300 border-amber-500/25' %}
+                {% elif item.tag_color == 'rose' %}
+                    {% set tag_cls = 'bg-rose-500/15 text-rose-300 border-rose-500/25' %}
+                {% else %}
+                    {% set tag_cls = 'bg-indigo-500/15 text-indigo-300 border-indigo-500/25' %}
+                {% endif %}
+
+                <article onclick="openNewsModal('{{ item.id }}')" class="glass-panel cursor-pointer rounded-2xl p-4 flex flex-col justify-between group relative overflow-hidden hover:-translate-y-0.5">
+                    <div>
+                        <div class="flex items-center justify-between gap-2 mb-2.5">
+                            <div class="flex items-center gap-1.5">
+                                <span class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border {{ tag_cls }}">
+                                    {{ item.tag }}
+                                </span>
+                                {% if loop.first %}
+                                <span class="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase bg-indigo-500 text-white">
+                                    NEW
+                                </span>
+                                {% endif %}
+                            </div>
+                            <span class="text-[11px] font-mono text-slate-500">{{ item.date }}</span>
+                        </div>
+                        <h3 class="text-sm font-bold text-white group-hover:text-indigo-300 transition-colors leading-snug mb-1.5">
+                            {{ item.title }}
+                        </h3>
+                        <p class="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                            {{ item.summary }}
+                        </p>
+                    </div>
+
+                    <div class="mt-3 pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] font-semibold text-indigo-400 group-hover:text-indigo-300">
+                        <span>Читать полностью</span>
+                        <svg class="w-3.5 h-3.5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </div>
+
+                    <div id="news-data-{{ item.id }}" class="hidden"
+                         data-title="{{ item.title }}"
+                         data-tag="{{ item.tag }}"
+                         data-date="{{ item.date }}">
+                        {{ item.content | safe }}
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- Секции игр -->
+        <div class="space-y-8">
+            {% for grp in groups %}
+            {% if grp.id == 'minecraft' %}
+                {% set accent_border = 'border-l-emerald-500 hover:border-emerald-500/45' %}
+                {% set accent_glow = 'from-emerald-500/[0.09]' %}
+                {% set bar_grad = 'from-emerald-500 via-teal-300 to-emerald-500' %}
+                {% set icon_bg = 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25' %}
+                {% set action_btn = 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border-emerald-500/35' %}
+            {% elif grp.id == '7dtd' %}
+                {% set accent_border = 'border-l-amber-500 hover:border-amber-500/45' %}
+                {% set accent_glow = 'from-amber-500/[0.09]' %}
+                {% set bar_grad = 'from-amber-500 via-yellow-300 to-amber-500' %}
+                {% set icon_bg = 'bg-amber-500/15 text-amber-400 border-amber-500/25' %}
+                {% set action_btn = 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border-amber-500/35' %}
+            {% elif grp.id == 'l4d2' %}
+                {% set accent_border = 'border-l-rose-500 hover:border-rose-500/45' %}
+                {% set accent_glow = 'from-rose-500/[0.09]' %}
+                {% set bar_grad = 'from-rose-500 via-pink-400 to-rose-500' %}
+                {% set icon_bg = 'bg-rose-500/15 text-rose-400 border-rose-500/25' %}
+                {% set action_btn = 'bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border-rose-500/35' %}
+            {% else %}
+                {% set accent_border = 'border-l-indigo-500 hover:border-indigo-500/45' %}
+                {% set accent_glow = 'from-indigo-500/[0.09]' %}
+                {% set bar_grad = 'from-indigo-500 via-cyan-400 to-indigo-500' %}
+                {% set icon_bg = 'bg-indigo-500/15 text-indigo-400 border-indigo-500/25' %}
+                {% set action_btn = 'bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border-indigo-500/35' %}
+            {% endif %}
+
+            <section class="game-section animate-reveal transition-all duration-300" data-category="{{ grp.id }}" style="animation-delay: {{ 0.18 + loop.index0 * 0.08 }}s;">
+                <div class="flex items-center justify-between mb-3 px-1">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-6 h-6 rounded-lg border backdrop-blur-md {{ icon_bg }} flex items-center justify-center">
+                            {% if grp.id == 'minecraft' %}
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                            {% elif grp.id == '7dtd' %}
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                            {% elif grp.id == 'l4d2' %}
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/></svg>
+                            {% else %}
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            {% endif %}
+                        </span>
+                        <h2 class="text-sm font-bold text-white tracking-wide">{{ grp.title }}</h2>
+                        {% if grp.desc %}
+                        <span class="hidden sm:inline text-xs text-slate-400">• {{ grp.desc }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    {% for srv in grp.servers %}
+                    <div id="card-{{ srv.id }}" data-online="{{ '1' if srv.online else '0' }}" data-search="{{ (srv.name ~ ' ' ~ srv.map ~ ' ' ~ srv.public_address ~ ' ' ~ (srv.player_list | join(' '))) | lower }}" class="server-card tilt-card glass-panel relative overflow-hidden rounded-2xl border-l-[3px] {{ accent_border }} p-4">
+                        <div class="scan-beam {% if not srv.online %}hidden{% endif %}"></div>
+                        <div class="absolute inset-y-0 left-0 w-56 bg-gradient-to-r {{ accent_glow }} to-transparent pointer-events-none"></div>
+
+                        <div class="relative grid grid-cols-1 lg:grid-cols-[96px_minmax(0,1fr)_84px_104px_225px_104px_36px] items-center gap-3.5">
+                            <div>
+                                <div class="status-badge w-[96px] justify-center inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold
+                                    {% if srv.online %} bg-emerald-500/10 text-emerald-400 border border-emerald-500/20
+                                    {% else %} bg-rose-500/10 text-rose-400 border border-rose-500/20 {% endif %}">
+                                    <span class="status-dot w-1.5 h-1.5 rounded-full shrink-0 {% if srv.online %} bg-emerald-400 animate-ping {% else %} bg-rose-400 {% endif %}"></span>
+                                    <span class="status-text">{{ 'Онлайн' if srv.online else 'Офлайн' }}</span>
+                                </div>
+                            </div>
+
+                            <!-- Колонка 2: Название, пинг, карта/кампания и трекер Кровавой Луны -->
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-2">
+                                    <h3 class="text-sm sm:text-[15px] font-bold text-white truncate">{{ srv.name }}</h3>
+                                    <span class="ping-badge shrink-0 font-mono text-[10px] px-1.5 py-0.5 rounded bg-white/[0.05] text-emerald-400">
+                                        {% if srv.ping_ms %}{{ srv.ping_ms }}ms{% endif %}
+                                    </span>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-slate-400 mt-1">
+                                    <span class="inline-flex items-center gap-1.5 min-w-0">
+                                        <svg class="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+                                        <span class="map-text text-slate-200 font-medium truncate">{{ srv.map }}</span>
+                                    </span>
+
+                                    <!-- Специальный бейдж режима / кампании L4D2 или Кровавой Луны 7DTD -->
+                                    <span class="extra-badge {% if not srv.extra_info %}hidden{% endif %}">
+                                        {% if srv.extra_info and srv.extra_info.type == '7dtd' %}
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold {% if srv.extra_info.is_bloodmoon %} bg-rose-500/20 text-rose-300 border border-rose-500/35 animate-pulse {% else %} bg-amber-500/15 text-amber-300 border border-amber-500/25 {% endif %}">
+                                                🌑 День {{ srv.extra_info.day }} ({{ srv.extra_info.time_str }}) • {{ srv.extra_info.status_text }}
+                                            </span>
+                                        {% elif srv.extra_info and srv.extra_info.type == 'l4d2' %}
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-rose-500/15 text-rose-300 border border-rose-500/25">
+                                                🎬 {{ srv.extra_info.title }}
+                                            </span>
+                                        {% endif %}
+                                    </span>
+
+                                    <span class="text-slate-700 shrink-0">•</span>
+                                    <span class="inline-flex items-center gap-1 shrink-0">
+                                        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        <span class="uptime-text text-slate-300">{{ srv.uptime }}</span>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="hidden lg:block w-[84px] h-8 bg-slate-950/60 border border-white/[0.06] rounded-lg px-1.5 py-1" title="График онлайна за 24ч">
+                                <canvas id="chart-{{ srv.id }}"></canvas>
+                            </div>
+
+                            <div class="w-full lg:w-[104px]">
+                                <div class="flex justify-between text-[11px] font-mono mb-1">
+                                    <span class="text-slate-400">Слоты</span>
+                                    <span class="players-count font-semibold text-white">{{ srv.players }}/{{ srv.max_players }}</span>
+                                </div>
+                                <div class="w-full bg-slate-950/90 border border-white/[0.07] rounded-full h-1.5 overflow-hidden">
+                                    {% set pct = ((srv.players / (srv.max_players or 1)) * 100) | round | int %}
+                                    <div class="players-bar bar-animated bg-gradient-to-r {{ bar_grad }} h-full rounded-full transition-all duration-700" style="width: {{ pct }}%"></div>
+                                </div>
+                            </div>
+
+                            <div class="w-full lg:w-[225px] flex items-center justify-between bg-[#050811]/90 border border-white/[0.09] rounded-xl pl-3 pr-1.5 py-1.5 shadow-inner">
+                                <code class="text-xs font-mono text-indigo-300 select-all truncate">{{ srv.public_address }}</code>
+                                <button onclick="copyIP('{{ srv.public_address }}', this)" class="shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-white/[0.06] hover:bg-white/[0.14] active:scale-95 text-[11px] font-medium text-slate-200 transition-all" title="Скопировать IP:Port">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                                    <span>Копия</span>
+                                </button>
+                            </div>
+
+                            <div class="w-full lg:w-[104px]">
+                                {% if srv.connect_type == 'steam' %}
+                                <a href="steam://connect/{{ srv.public_address }}" class="w-full justify-center inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border {{ action_btn }} text-xs font-semibold transition-all hover:scale-[1.02] active:scale-[0.98]">
+                                    <svg class="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-9.95 9.05l5.35 2.21a2.84 2.84 0 0 1 1.6-.49l2.43-3.52v-.05a3.79 3.79 0 1 1 3.79 3.79h-.09l-3.46 2.47a2.85 2.85 0 0 1-5.66.45L2.3 14.35A10 10 0 1 0 12 2z"/></svg>
+                                    <span>Играть</span>
+                                </a>
+                                {% else %}
+                                <button onclick="openModal('{{ srv.id }}')" class="w-full justify-center inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border {{ action_btn }} text-xs font-semibold transition-all hover:scale-[1.02] active:scale-[0.98]">
+                                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/></svg>
+                                    <span>Войти</span>
+                                </button>
+                                {% endif %}
+                            </div>
+
+                            <div class="flex justify-end">
+                                <button onclick="openModal('{{ srv.id }}')" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white/[0.05] hover:bg-white/[0.13] active:scale-95 text-slate-300 hover:text-white border border-white/[0.08] transition-all" title="Инструкция по подключению">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="players-list-container {% if not srv.player_list %}hidden{% endif %} relative mt-3 pt-2.5 border-t border-white/[0.06] flex flex-wrap items-center gap-1.5">
+                            {% if srv.player_list %}
+                                <span class="text-[11px] text-slate-500 mr-1">Игроки онлайн:</span>
+                                {% for p in srv.player_list %}
+                                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-white/[0.06] text-slate-200 text-[11px] rounded-md border border-white/[0.07]">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                    {{ p }}
+                                </span>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div id="modal-data-{{ srv.id }}" class="hidden"
+                             data-title="{{ srv.name }}"
+                             data-game="{{ grp.title }}"
+                             data-address="{{ srv.public_address }}"
+                             data-steam="{{ '1' if srv.connect_type == 'steam' else '0' }}"
+                             data-modpack="{{ srv.modpack_url }}">
+                            {{ srv.guide | safe }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endfor %}
+        </div>
+
+        <footer class="animate-reveal mt-10 pt-5 border-t border-white/[0.08] flex flex-col md:flex-row items-center justify-between text-[11px] text-slate-500 gap-3" style="animation-delay: 0.4s;">
+            <div class="flex flex-wrap items-center justify-center md:justify-start gap-x-3 gap-y-1.5">
+                <span>IrkGames Portal</span>
+                <span class="text-slate-700">•</span>
+                <a href="https://discord.gg/ZfDzahnXyJ" target="_blank" rel="noopener noreferrer" class="text-slate-400 hover:text-indigo-300 font-medium transition">Discord</a>
+                <span class="text-slate-700">•</span>
+                <a href="https://t.me/Irk_Games" target="_blank" rel="noopener noreferrer" class="text-slate-400 hover:text-sky-300 font-medium transition">Telegram</a>
+                <span class="text-slate-700">•</span>
+                <a href="https://steamcommunity.com/groups/IrkGames" target="_blank" rel="noopener noreferrer" class="text-slate-400 hover:text-white font-medium transition">Steam</a>
+                <span class="text-slate-700">•</span>
+                <a href="https://lolka.gg/pTL3SjwvD" target="_blank" rel="noopener noreferrer" class="text-slate-400 hover:text-fuchsia-300 font-medium transition">Lolka.gg</a>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-center gap-2">
+                <button id="scene-switch-btn" onclick="window.bgEngine && window.bgEngine.nextScene()" class="px-2.5 py-1 rounded-lg bg-slate-900/70 hover:bg-indigo-500/20 text-slate-300 hover:text-indigo-200 border border-white/[0.08] transition active:scale-95" title="5 сцен: Космос -> Contra -> Battle City -> Minecraft -> 7DTD Орда">
+                    Сцена: Космос (60с)
+                </button>
+                <button onclick="window.bgEngine && window.bgEngine.action()" class="px-2.5 py-1 rounded-lg bg-slate-900/70 hover:bg-indigo-500/20 text-slate-400 hover:text-indigo-200 border border-white/[0.08] transition active:scale-95" title="Вызвать подкрепление / капсулу / волну">
+                    + Экшен
+                </button>
+                <span class="text-slate-700 hidden sm:inline">|</span>
+                <span id="last-updated" class="font-mono">—</span>
+                <a href="/admin" title="Панель управления" class="text-slate-600 hover:text-slate-300 transition ml-1">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                </a>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Модальные окна -->
+    <div id="guide-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/75 backdrop-blur-md transition-opacity" onclick="if(event.target===this) closeModal()">
+        <div id="modal-box" class="glass-panel rounded-2xl max-w-md w-full p-6">
+            <div class="flex items-start justify-between gap-4 mb-4">
+                <div>
+                    <span id="modal-game" class="text-[10px] font-bold uppercase tracking-wider text-indigo-400"></span>
+                    <h3 id="modal-title" class="text-lg font-bold text-white mt-0.5"></h3>
+                </div>
+                <button onclick="closeModal()" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="mb-4 space-y-2">
+                <div>
+                    <div class="text-[11px] text-slate-400 mb-1">Адрес для подключения:</div>
+                    <div class="flex items-center justify-between bg-[#050811] border border-white/10 rounded-xl px-3.5 py-2">
+                        <code id="modal-address" class="text-xs font-mono text-indigo-300 select-all"></code>
+                        <button onclick="copyIP(document.getElementById('modal-address').innerText, this)" class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/15 active:scale-95 text-xs text-white transition">
+                            <span>Скопировать</span>
+                        </button>
+                    </div>
+                </div>
+                <div id="modal-console-wrap" class="hidden">
+                    <div class="text-[11px] text-slate-400 mb-1">Команда для консоли (~):</div>
+                    <div class="flex items-center justify-between bg-[#050811] border border-white/10 rounded-xl px-3.5 py-2">
+                        <code id="modal-console" class="text-xs font-mono text-emerald-300 select-all"></code>
+                        <button onclick="copyIP(document.getElementById('modal-console').innerText, this)" class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/15 active:scale-95 text-xs text-white transition">
+                            <span>Копия</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="text-[11px] text-slate-400 mb-1.5">Пошаговая инструкция:</div>
+            <div id="modal-body" class="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06] text-xs text-slate-300 leading-relaxed space-y-1"></div>
+            <div id="modal-actions" class="mt-5 flex flex-wrap gap-2.5"></div>
+        </div>
+    </div>
+
+    <div id="news-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/75 backdrop-blur-md transition-opacity" onclick="if(event.target===this) closeNewsModal()">
+        <div id="news-modal-box" class="glass-panel rounded-2xl max-w-lg w-full p-6">
+            <div class="flex items-start justify-between gap-4 mb-3">
+                <div class="flex items-center gap-2">
+                    <span id="news-modal-tag" class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-indigo-500/15 text-indigo-300 border border-indigo-500/25"></span>
+                    <span id="news-modal-date" class="text-xs font-mono text-slate-400"></span>
+                </div>
+                <button onclick="closeNewsModal()" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <h3 id="news-modal-title" class="text-lg font-bold text-white leading-snug mb-4"></h3>
+            <div id="news-modal-body" class="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] text-xs sm:text-sm text-slate-300 leading-relaxed"></div>
+            <div class="mt-5 flex flex-wrap justify-end gap-2">
+                <a href="https://t.me/Irk_Games" target="_blank" rel="noopener noreferrer" class="px-3.5 py-2 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/30 text-xs font-semibold transition">Telegram</a>
+                <a href="https://discord.gg/ZfDzahnXyJ" target="_blank" rel="noopener noreferrer" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition">Обсудить в Discord</a>
+                <button onclick="closeNewsModal()" class="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-slate-200 text-xs font-semibold transition">Закрыть</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        (function initFiveSceneEngine() {
+            const canvas = document.getElementById('space-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            let w, h;
+
+            const SCENES = ['space', 'contra', 'tanks', 'minecraft', '7dtd'];
+            const SCENE_NAMES = {
+                space: 'Космос',
+                contra: 'Contra',
+                tanks: 'Battle City',
+                minecraft: 'Minecraft Night',
+                '7dtd': '7DTD Орда'
+            };
+            let sceneIdx = 0, currentScene = 'space', countdown = 60;
+            const switchBtn = document.getElementById('scene-switch-btn');
+            const horizonEl = document.getElementById('cyber-horizon');
+
+            let stars = [], comets = [], explosions = [], shields = [], flares = [], debris = [], shells = [];
+            const mouse = { x: 0, y: 0, targetX: 0, targetY: 0 };
+
+            // --- 1. SPACE ---
+            let asteroids = [], ships = [], lasers = [], beams = [];
+            // --- 2. CONTRA ---
+            let contraScroll = 0, contraHeroes = [], contraEnemies = [], contraBullets = [], contraCapsules = [], contraBoss = null, contraSpawnTimer = 0;
+            // --- 3. BATTLE CITY ---
+            const TILE = 28;
+            let bcGrid = [], bcCols = 0, bcRows = 0, bcOffsetX = 0, bcOffsetY = 0, bcTanks = [], bcBullets = [], bcEagle = null, bcTrackPhase = 0;
+            // --- 4. MINECRAFT NIGHT ---
+            let mcBlocks = [], mcTorches = [], mcMobs = [], mcParticles = [];
+            // --- 5. 7DTD BLOOD MOON ---
+            let sdZombies = [], sdTurrets = [], sdBullets = [], sdSearchAngle = 0;
+
+            window.addEventListener('mousemove', e => {
+                mouse.targetX = (e.clientX / window.innerWidth - 0.5) * 24;
+                mouse.targetY = (e.clientY / window.innerHeight - 0.5) * 24;
+            });
+
+            function resize() {
+                w = canvas.width = window.innerWidth;
+                h = canvas.height = window.innerHeight;
+                createStars();
+                createAsteroids();
+                if (currentScene === 'contra') initContraScene();
+                if (currentScene === 'tanks') initBattleCityScene();
+                if (currentScene === 'minecraft') initMinecraftScene();
+                if (currentScene === '7dtd') init7dtdScene();
+            }
+
+            const starColors = ['#ffffff', '#c7d2fe', '#a5f3fc', '#e0e7ff'];
+            function createStars() {
+                const count = Math.min(200, Math.floor((w * h) / 8000));
+                stars = Array.from({ length: count }, () => ({
+                    x: Math.random() * w, y: Math.random() * h,
+                    r: Math.random() * 1.5 + 0.3, depth: Math.random() * 0.85 + 0.15,
+                    alpha: Math.random() * 0.7 + 0.2, twinkle: Math.random() * 0.03 + 0.008,
+                    phase: Math.random() * Math.PI * 2,
+                    color: starColors[Math.floor(Math.random() * starColors.length)]
+                }));
+            }
+
+            function createAsteroids() {
+                asteroids = Array.from({ length: 6 }, () => {
+                    const vertices = [], pts = 7 + Math.floor(Math.random() * 4), rad = 10 + Math.random() * 14;
+                    for (let i = 0; i < pts; i++) {
+                        const a = (i / pts) * Math.PI * 2, r = rad * (0.7 + Math.random() * 0.45);
+                        vertices.push({ x: Math.cos(a) * r, y: Math.sin(a) * r });
+                    }
+                    return { x: Math.random() * w, y: Math.random() * h, vx: (Math.random() - 0.5) * 0.25, vy: (Math.random() - 0.5) * 0.2, rot: Math.random() * Math.PI * 2, vrot: (Math.random() - 0.5) * 0.006, vertices };
+                });
+            }
+
+            window.addEventListener('resize', resize);
+            resize();
+
+            function getGroundY() { return Math.max(260, h - 68); }
+
+            // =================================================================
+            // СЦЕНА 1: КОСМИЧЕСКАЯ БАТАЛИЯ
+            // =================================================================
+            const FACTIONS = [
+                { id: 'cyan', body: '#e0f2fe', wing: '#22d3ee', engine: '#38bdf8', laser: '#22d3ee' },
+                { id: 'magenta', body: '#fae8ff', wing: '#f43f5e', engine: '#fb7185', laser: '#f43f5e' }
+            ];
+            const BASE_CLASSES = ['interceptor', 'cruiser', 'wing'];
+
+            function spawnShip(factionIndex, shipClass, side, customX, customY) {
+                const f = FACTIONS[factionIndex];
+                const cls = shipClass || BASE_CLASSES[Math.floor(Math.random() * BASE_CLASSES.length)];
+                const fromLeft = side !== undefined ? side : (factionIndex === 0);
+                const x = customX !== undefined ? customX : (fromLeft ? -65 : w + 65);
+                const y = customY !== undefined ? customY : h * (0.12 + Math.random() * 0.72);
+                const angle = fromLeft ? (Math.random() - 0.5) * 0.35 : Math.PI + (Math.random() - 0.5) * 0.35;
+
+                let speed = 2.45, turnRate = 0.038, hp = 3, size = 11, fireRate = 32;
+                if (cls === 'mothership') { speed = 0.85; turnRate = 0.009; hp = 18; size = 28; fireRate = 75; }
+                else if (cls === 'cruiser') { speed = 1.45; turnRate = 0.018; hp = 7; size = 18; fireRate = 46; }
+                else if (cls === 'wing') { speed = 2.15; turnRate = 0.031; hp = 4; size = 13; fireRate = 36; }
+
+                ships.push({
+                    faction: f, cls, x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+                    angle, speed, turnRate, hp, maxHp: hp, fireRate,
+                    cooldown: Math.floor(Math.random() * 35), flareCooldown: 0, evadeTimer: 0, evadeDir: 1,
+                    trail: [], size
+                });
+            }
+
+            function initSpaceScene() {
+                ships = []; lasers = []; beams = [];
+                BASE_CLASSES.forEach(cls => { spawnShip(0, cls, true); spawnShip(1, cls, false); });
+            }
+            initSpaceScene();
+
+            function drawShip(s) {
+                if (s.trail.length > 1) {
+                    for (let i = 1; i < s.trail.length; i++) {
+                        const t0 = s.trail[i - 1], t1 = s.trail[i], ratio = i / s.trail.length;
+                        ctx.beginPath(); ctx.strokeStyle = s.faction.engine;
+                        ctx.globalAlpha = ratio * (s.cls === 'mothership' ? 0.6 : 0.4);
+                        ctx.lineWidth = ratio * (s.cls === 'mothership' ? 5.5 : (s.cls === 'cruiser' ? 3.8 : 2));
+                        ctx.moveTo(t0.x, t0.y); ctx.lineTo(t1.x, t1.y); ctx.stroke();
+                    }
+                    ctx.globalAlpha = 1;
+                }
+                if ((s.cls === 'cruiser' || s.cls === 'mothership') && s.hp < s.maxHp) {
+                    const bw = s.size * 1.6;
+                    ctx.fillStyle = 'rgba(15, 23, 42, 0.8)'; ctx.fillRect(s.x - bw / 2, s.y - s.size - 10, bw, 3);
+                    ctx.fillStyle = s.faction.wing; ctx.fillRect(s.x - bw / 2, s.y - s.size - 10, bw * Math.max(0, s.hp / s.maxHp), 3);
+                }
+                ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.angle);
+                ctx.shadowBlur = 12; ctx.shadowColor = s.faction.wing;
+                const sz = s.size;
+                ctx.beginPath();
+                if (s.cls === 'mothership') {
+                    ctx.moveTo(sz * 1.45, 0); ctx.lineTo(sz * 0.8, -sz * 0.55); ctx.lineTo(-sz * 0.2, -sz * 0.75);
+                    ctx.lineTo(-sz * 1.1, -sz * 0.5); ctx.lineTo(-sz * 0.85, 0); ctx.lineTo(-sz * 1.1, sz * 0.5);
+                    ctx.lineTo(-sz * 0.2, sz * 0.75); ctx.lineTo(sz * 0.8, sz * 0.55);
+                } else if (s.cls === 'cruiser') {
+                    ctx.moveTo(sz * 1.35, -sz * 0.18); ctx.lineTo(sz * 0.6, -sz * 0.62); ctx.lineTo(-sz * 0.95, -sz * 0.55);
+                    ctx.lineTo(-sz * 0.75, 0); ctx.lineTo(-sz * 0.95, sz * 0.55); ctx.lineTo(sz * 0.6, sz * 0.62);
+                    ctx.lineTo(sz * 1.35, sz * 0.18);
+                } else if (s.cls === 'wing') {
+                    ctx.moveTo(sz * 1.15, 0); ctx.lineTo(sz * 0.2, -sz * 0.95); ctx.lineTo(-sz * 0.45, -sz * 0.85);
+                    ctx.lineTo(-sz * 0.25, -sz * 0.25); ctx.lineTo(-sz * 0.85, 0); ctx.lineTo(-sz * 0.25, sz * 0.25);
+                    ctx.lineTo(-sz * 0.45, sz * 0.85); ctx.lineTo(sz * 0.2, sz * 0.95);
+                } else {
+                    ctx.moveTo(sz * 1.3, 0); ctx.lineTo(-sz * 0.95, -sz * 0.72); ctx.lineTo(-sz * 0.45, 0); ctx.lineTo(-sz * 0.95, sz * 0.72);
+                }
+                ctx.closePath(); ctx.fillStyle = 'rgba(10, 15, 30, 0.88)'; ctx.fill();
+                ctx.lineWidth = 1.5; ctx.strokeStyle = s.faction.wing; ctx.stroke();
+                ctx.restore();
+            }
+
+            function updateAndDrawSpace() {
+                asteroids.forEach(a => {
+                    a.x = (a.x + a.vx + w) % w; a.y = (a.y + a.vy + h) % h; a.rot += a.vrot;
+                    ctx.save(); ctx.translate(a.x - mouse.x * 0.3, a.y - mouse.y * 0.3); ctx.rotate(a.rot);
+                    ctx.beginPath(); a.vertices.forEach((v, idx) => idx === 0 ? ctx.moveTo(v.x, v.y) : ctx.lineTo(v.x, v.y)); ctx.closePath();
+                    ctx.strokeStyle = 'rgba(129, 140, 248, 0.16)'; ctx.fillStyle = 'rgba(11, 16, 32, 0.45)'; ctx.lineWidth = 1; ctx.fill(); ctx.stroke(); ctx.restore();
+                });
+
+                for (let i = ships.length - 1; i >= 0; i--) {
+                    const s = ships[i];
+                    if (s.flareCooldown > 0) s.flareCooldown--;
+                    if (s.evadeTimer > 0) s.evadeTimer--;
+                    if ((s.cls === 'interceptor' || s.cls === 'wing') && s.flareCooldown === 0) {
+                        for (let k = 0; k < lasers.length; k++) {
+                            const l = lasers[k];
+                            if (l.factionId !== s.faction.id && Math.hypot(l.x - s.x, l.y - s.y) < 85) {
+                                s.evadeTimer = 22; s.evadeDir = Math.random() > 0.5 ? 1 : -1; s.flareCooldown = 140;
+                                for (let f = 0; f < 3; f++) {
+                                    const fa = s.angle + Math.PI + (Math.random() - 0.5) * 1.4;
+                                    flares.push({ x: s.x, y: s.y, vx: Math.cos(fa) * 2, vy: Math.sin(fa) * 2, alpha: 1 });
+                                }
+                                break;
+                            }
+                        }
+                    }
+
+                    let target = null, minDist = Infinity;
+                    for (let j = 0; j < ships.length; j++) {
+                        if (ships[j].faction.id !== s.faction.id) {
+                            const d = Math.hypot(ships[j].x - s.x, ships[j].y - s.y);
+                            if (d < minDist) { minDist = d; target = ships[j]; }
+                        }
+                    }
+
+                    let desiredAngle = s.angle;
+                    if (s.x < 85 || s.x > w - 85 || s.y < 85 || s.y > h - 85) desiredAngle = Math.atan2(h * 0.45 - s.y, w * 0.5 - s.x);
+                    else if (s.evadeTimer > 0) desiredAngle = s.angle + s.evadeDir * 0.85;
+                    else if (target) desiredAngle = Math.atan2(target.y - s.y, target.x - s.x);
+
+                    let diff = desiredAngle - s.angle;
+                    while (diff > Math.PI) diff -= Math.PI * 2;
+                    while (diff < -Math.PI) diff += Math.PI * 2;
+                    s.angle += Math.sign(diff) * Math.min(Math.abs(diff), s.turnRate);
+
+                    const currentSpeed = s.evadeTimer > 0 ? s.speed * 1.35 : s.speed;
+                    s.x += Math.cos(s.angle) * currentSpeed; s.y += Math.sin(s.angle) * currentSpeed;
+                    s.trail.push({ x: s.x - Math.cos(s.angle) * (s.size * 0.65), y: s.y - Math.sin(s.angle) * (s.size * 0.65) });
+                    if (s.trail.length > (s.cls === 'mothership' ? 28 : 16)) s.trail.shift();
+
+                    if (s.cooldown > 0) s.cooldown--;
+                    if (target && minDist < 480 && Math.abs(diff) < 0.28 && s.cooldown === 0) {
+                        s.cooldown = s.fireRate + Math.floor(Math.random() * 20);
+                        const lSpeed = s.cls === 'cruiser' ? 7.2 : 9.4;
+                        if (s.cls === 'mothership') {
+                            beams.push({ x1: s.x + Math.cos(s.angle) * 26, y1: s.y + Math.sin(s.angle) * 26, x2: target.x, y2: target.y, color: s.faction.laser, alpha: 0.9 });
+                            target.hp -= 2;
+                            if (target.hp <= 0) {
+                                const idx = ships.indexOf(target);
+                                if (idx !== -1) {
+                                    spawnExplosion(target.x, target.y, target.faction.wing, 1.8);
+                                    const deadF = target.faction.id === 'cyan' ? 0 : 1, deadC = target.cls;
+                                    ships.splice(idx, 1); setTimeout(() => spawnShip(deadF, deadC), 2200);
+                                }
+                            } else shields.push({ x: target.x, y: target.y, r: target.size + 4, maxR: target.size + 14, alpha: 0.9, color: target.faction.wing });
+                            if (ships.length < 10) spawnShip(s.faction.id === 'cyan' ? 0 : 1, 'interceptor', undefined, s.x, s.y);
+                        } else if (s.cls === 'cruiser') {
+                            [-5, 5].forEach(offset => {
+                                const perpX = -Math.sin(s.angle) * offset, perpY = Math.cos(s.angle) * offset;
+                                lasers.push({ factionId: s.faction.id, x: s.x + Math.cos(s.angle) * 18 + perpX, y: s.y + Math.sin(s.angle) * 18 + perpY, vx: Math.cos(s.angle) * lSpeed, vy: Math.sin(s.angle) * lSpeed, color: s.faction.laser, thick: 3.2, life: 62 });
+                            });
+                        } else {
+                            lasers.push({ factionId: s.faction.id, x: s.x + Math.cos(s.angle) * 14, y: s.y + Math.sin(s.angle) * 14, vx: Math.cos(s.angle) * lSpeed, vy: Math.sin(s.angle) * lSpeed, color: s.faction.laser, thick: 2, life: 54 });
+                        }
+                    }
+                    drawShip(s);
+                }
+
+                for (let i = beams.length - 1; i >= 0; i--) {
+                    const b = beams[i]; b.alpha -= 0.055;
+                    if (b.alpha <= 0) { beams.splice(i, 1); continue; }
+                    ctx.save(); ctx.globalAlpha = b.alpha; ctx.shadowBlur = 16; ctx.shadowColor = b.color;
+                    ctx.beginPath(); ctx.strokeStyle = b.color; ctx.lineWidth = 4.5; ctx.moveTo(b.x1, b.y1); ctx.lineTo(b.x2, b.y2); ctx.stroke();
+                    ctx.beginPath(); ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.6; ctx.moveTo(b.x1, b.y1); ctx.lineTo(b.x2, b.y2); ctx.stroke(); ctx.restore();
+                }
+
+                for (let i = lasers.length - 1; i >= 0; i--) {
+                    const l = lasers[i]; l.x += l.vx; l.y += l.vy; l.life--;
+                    ctx.save(); ctx.shadowBlur = 10; ctx.shadowColor = l.color;
+                    ctx.beginPath(); ctx.strokeStyle = '#ffffff'; ctx.lineWidth = l.thick; ctx.moveTo(l.x, l.y); ctx.lineTo(l.x - l.vx * 2.2, l.y - l.vy * 2.2); ctx.stroke();
+                    ctx.strokeStyle = l.color; ctx.lineWidth = l.thick * 2; ctx.globalAlpha = 0.45; ctx.stroke(); ctx.restore();
+
+                    let hit = false;
+                    for (let j = ships.length - 1; j >= 0; j--) {
+                        const target = ships[j];
+                        if (target.faction.id !== l.factionId && Math.hypot(target.x - l.x, target.y - l.y) < target.size + 4) {
+                            hit = true; target.hp--;
+                            if (target.hp <= 0) {
+                                const scale = target.cls === 'mothership' ? 2.6 : (target.cls === 'cruiser' ? 1.8 : 1.3);
+                                spawnExplosion(target.x, target.y, target.faction.wing, scale);
+                                const deadFaction = target.faction.id === 'cyan' ? 0 : 1, deadClass = target.cls;
+                                ships.splice(j, 1);
+                                if (deadClass !== 'mothership') setTimeout(() => spawnShip(deadFaction, deadClass), 2000);
+                            } else {
+                                shields.push({ x: target.x, y: target.y, r: target.size + 2, maxR: target.size + 11, alpha: 0.85, color: target.faction.wing });
+                                spawnExplosion(l.x, l.y, l.color, 0.7);
+                            }
+                            break;
+                        }
+                    }
+                    if (hit || l.life <= 0 || l.x < -50 || l.x > w + 50 || l.y < -50 || l.y > h + 50) lasers.splice(i, 1);
+                }
+            }
+
+            // =================================================================
+            // СЦЕНА 2: CONTRA (Уровень 1)
+            // =================================================================
+            function initContraScene() {
+                const gy = getGroundY();
+                contraHeroes = [
+                    { x: w * 0.16, y: gy, vy: 0, onGround: true, level: 0, band: '#f43f5e', pants: '#38bdf8', weapon: 'S', aimAngle: 0, runPhase: 0, fireCd: 0, jumpCd: 55 },
+                    { x: w * 0.10, y: gy - 58, vy: 0, onGround: true, level: 1, band: '#22d3ee', pants: '#818cf8', weapon: 'L', aimAngle: 0.15, runPhase: 1.7, fireCd: 11, jumpCd: 85 }
+                ];
+                contraEnemies = []; contraBullets = []; contraCapsules = [];
+                contraBoss = { x: w - 115, y: gy, hp: 80, maxHp: 80, fireCd: 45, pulse: 0 };
+            }
+
+            function spawnContraCapsule() {
+                const types = ['S', 'L', 'F'];
+                contraCapsules.push({ x: -35, y: getGroundY() - 135 - Math.random() * 35, vx: 3.3, phase: 0, type: types[Math.floor(Math.random() * types.length)] });
+            }
+
+            function updateAndDrawContra() {
+                const gy = getGroundY(), upperY = gy - 58;
+                contraScroll = (contraScroll + 2.6) % 48;
+
+                ctx.save();
+                ctx.fillStyle = 'rgba(11, 16, 32, 0.85)'; ctx.fillRect(0, gy, w, 10);
+                ctx.strokeStyle = 'rgba(56, 189, 248, 0.45)'; ctx.lineWidth = 1.8; ctx.strokeRect(0, gy, w, 10);
+                ctx.fillStyle = 'rgba(11, 16, 32, 0.85)'; ctx.fillRect(0, upperY, w * 0.30, 8);
+                ctx.strokeStyle = 'rgba(129, 140, 248, 0.45)'; ctx.strokeRect(0, upperY, w * 0.30, 8);
+
+                for (let gx = -contraScroll; gx < w + 48; gx += 48) {
+                    ctx.beginPath(); ctx.strokeStyle = 'rgba(56, 189, 248, 0.25)';
+                    ctx.moveTo(gx, gy); ctx.lineTo(gx, gy + 10);
+                    ctx.moveTo(gx + 12, gy + 10); ctx.lineTo(gx + 4, gy + 26);
+                    ctx.moveTo(gx + 36, gy + 10); ctx.lineTo(gx + 44, gy + 26); ctx.stroke();
+                }
+                ctx.restore();
+
+                contraHeroes.forEach(hero => {
+                    const floorY = hero.level === 1 ? upperY : gy;
+                    hero.runPhase += 0.25;
+                    if (hero.fireCd > 0) hero.fireCd--;
+                    if (hero.jumpCd > 0) hero.jumpCd--;
+                    if (Math.random() < 0.02) hero.aimAngle = hero.level === 1 ? 0.18 : (Math.random() > 0.5 ? -0.25 : 0);
+
+                    if (hero.onGround && hero.jumpCd === 0) { hero.vy = -8.8; hero.onGround = false; hero.jumpCd = 130 + Math.floor(Math.random() * 90); }
+                    if (!hero.onGround) {
+                        hero.y += hero.vy; hero.vy += 0.42;
+                        if (hero.y >= floorY) { hero.y = floorY; hero.vy = 0; hero.onGround = true; }
+                    }
+
+                    if (hero.fireCd === 0) {
+                        hero.fireCd = hero.weapon === 'S' ? 22 : (hero.weapon === 'L' ? 14 : 17);
+                        const bx = hero.x + Math.cos(hero.aimAngle) * 20, by = hero.y - (hero.onGround ? 21 : 15) + Math.sin(hero.aimAngle) * 20;
+                        shells.push({ x: hero.x + 2, y: by, vx: -1.5 - Math.random(), vy: -3 - Math.random(), alpha: 0.85 });
+
+                        if (hero.weapon === 'S') {
+                            [-0.24, -0.12, 0, 0.12, 0.24].forEach(offset => {
+                                const ang = hero.aimAngle + offset;
+                                contraBullets.push({ fromHero: true, x: bx, y: by, vx: Math.cos(ang) * 9.5, vy: Math.sin(ang) * 9.5, r: 3.8, color: '#f43f5e' });
+                            });
+                        } else if (hero.weapon === 'L') {
+                            contraBullets.push({ fromHero: true, isLaser: true, x: bx, y: by, vx: Math.cos(hero.aimAngle) * 13, vy: Math.sin(hero.aimAngle) * 13, r: 3.5, color: '#22d3ee' });
+                        } else {
+                            contraBullets.push({ fromHero: true, isFire: true, x: bx, y: by, vx: Math.cos(hero.aimAngle) * 8.5, vy: Math.sin(hero.aimAngle) * 8.5, phase: 0, r: 4, color: '#818cf8' });
+                        }
+                    }
+
+                    ctx.save(); ctx.translate(Math.round(hero.x), Math.round(hero.y));
+                    if (!hero.onGround) {
+                        ctx.translate(0, -15); ctx.rotate(hero.runPhase * 2.4);
+                        ctx.fillStyle = '#0f172a'; ctx.strokeStyle = hero.pants; ctx.lineWidth = 2;
+                        ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+                    } else {
+                        const stride = Math.sin(hero.runPhase) * 8, bob = Math.abs(Math.cos(hero.runPhase)) * 2;
+                        ctx.strokeStyle = hero.pants; ctx.lineWidth = 4;
+                        ctx.beginPath(); ctx.moveTo(-2, -13 + bob); ctx.lineTo(-5 - stride, -2); ctx.moveTo(2, -13 + bob); ctx.lineTo(4 + stride, -2); ctx.stroke();
+                        ctx.fillStyle = '#e2e8f0'; ctx.fillRect(-5, -26 + bob, 10, 12);
+                        ctx.fillStyle = '#cbd5e1'; ctx.fillRect(-4, -34 + bob, 8, 8);
+                        ctx.fillStyle = hero.band; ctx.fillRect(-5, -33 + bob, 10, 2.5);
+                        ctx.save(); ctx.translate(1, -21 + bob); ctx.rotate(hero.aimAngle);
+                        ctx.fillStyle = '#475569'; ctx.fillRect(-4, -2, 22, 4); ctx.restore();
+                    }
+                    ctx.restore();
+                });
+
+                for (let i = contraCapsules.length - 1; i >= 0; i--) {
+                    const cap = contraCapsules[i]; cap.x += cap.vx; cap.phase += 0.12;
+                    const cy = cap.y + Math.sin(cap.phase * 0.7) * 14;
+                    ctx.save(); ctx.translate(cap.x, cy);
+                    ctx.shadowBlur = 12; ctx.shadowColor = '#f43f5e';
+                    ctx.fillStyle = '#0f172a'; ctx.strokeStyle = '#f43f5e'; ctx.lineWidth = 1.6;
+                    ctx.beginPath(); ctx.ellipse(0, 0, 14, 9, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+                    ctx.fillStyle = '#ffffff'; ctx.font = 'bold 11px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(cap.type, 0, 0.5);
+                    ctx.restore();
+                    if (cap.x > w + 40) contraCapsules.splice(i, 1);
+                }
+
+                contraSpawnTimer++;
+                if (contraSpawnTimer > 50 && contraEnemies.length < 5) {
+                    contraSpawnTimer = 0; contraEnemies.push({ x: w - 165, y: gy, vx: -(2.6 + Math.random() * 1.4), phase: 0 });
+                }
+
+                for (let i = contraEnemies.length - 1; i >= 0; i--) {
+                    const en = contraEnemies[i]; en.x += en.vx; en.phase += 0.25;
+                    const stride = Math.sin(en.phase) * 7;
+                    ctx.save(); ctx.translate(Math.round(en.x), Math.round(en.y));
+                    ctx.strokeStyle = '#818cf8'; ctx.lineWidth = 3.5;
+                    ctx.beginPath(); ctx.moveTo(0, -12); ctx.lineTo(-4 - stride, -1); ctx.moveTo(0, -12); ctx.lineTo(4 + stride, -1); ctx.stroke();
+                    ctx.fillStyle = '#4f46e5'; ctx.fillRect(-4, -24, 8, 12);
+                    ctx.fillStyle = '#cbd5e1'; ctx.fillRect(-3, -31, 7, 7); ctx.restore();
+                    if (en.x < -30) contraEnemies.splice(i, 1);
+                }
+
+                if (contraBoss) {
+                    contraBoss.pulse += 0.08;
+                    if (contraBoss.fireCd > 0) contraBoss.fireCd--;
+                    if (contraBoss.fireCd === 0) {
+                        contraBoss.fireCd = 55;
+                        [-115, -96].forEach(ty => contraBullets.push({ fromHero: false, x: contraBoss.x - 46, y: contraBoss.y + ty, vx: -6.5, vy: 1.4 + Math.random() * 1.2, r: 4, color: '#38bdf8' }));
+                    }
+                    ctx.save(); ctx.translate(contraBoss.x, contraBoss.y);
+                    ctx.fillStyle = 'rgba(11, 16, 32, 0.9)'; ctx.strokeStyle = '#6366f1'; ctx.lineWidth = 1.8;
+                    ctx.fillRect(-35, -135, 70, 135); ctx.strokeRect(-35, -135, 70, 135);
+                    const r = 13 + Math.sin(contraBoss.pulse) * 2.5;
+                    ctx.shadowBlur = 18; ctx.shadowColor = '#f43f5e'; ctx.fillStyle = '#f43f5e';
+                    ctx.beginPath(); ctx.arc(-16, -66, r, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+                }
+
+                for (let i = contraBullets.length - 1; i >= 0; i--) {
+                    const b = contraBullets[i]; b.x += b.vx;
+                    if (b.isFire) { b.phase += 0.35; b.y += b.vy + Math.sin(b.phase) * 3.5; } else { b.y += b.vy; }
+                    ctx.save(); ctx.shadowBlur = 10; ctx.shadowColor = b.color;
+                    ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(b.x, b.y, b.r * 0.6, 0, Math.PI * 2); ctx.fill();
+                    ctx.strokeStyle = b.color; ctx.lineWidth = 2.2; ctx.stroke(); ctx.restore();
+
+                    let hit = false;
+                    if (b.fromHero) {
+                        for (let c = contraCapsules.length - 1; c >= 0; c--) {
+                            const cap = contraCapsules[c], cy = cap.y + Math.sin(cap.phase * 0.7) * 14;
+                            if (Math.hypot(cap.x - b.x, cy - b.y) < 16) {
+                                hit = true; spawnExplosion(cap.x, cy, '#f43f5e', 1.3);
+                                contraHeroes.forEach(h => h.weapon = cap.type); contraCapsules.splice(c, 1); break;
+                            }
+                        }
+                        if (!hit) {
+                            for (let e = contraEnemies.length - 1; e >= 0; e--) {
+                                const en = contraEnemies[e];
+                                if (Math.abs(en.x - b.x) < 14 && Math.abs((en.y - 16) - b.y) < 18) {
+                                    hit = !b.isLaser; spawnExplosion(en.x, en.y - 16, '#818cf8', 1.2); contraEnemies.splice(e, 1); break;
+                                }
+                            }
+                        }
+                        if (!hit && contraBoss && Math.abs((contraBoss.x - 16) - b.x) < 26 && Math.abs((contraBoss.y - 75) - b.y) < 55) {
+                            hit = true; contraBoss.hp--; spawnExplosion(b.x, b.y, '#f43f5e', 0.7);
+                            if (contraBoss.hp <= 0) { spawnExplosion(contraBoss.x - 15, contraBoss.y - 66, '#f43f5e', 2.8); contraBoss.hp = contraBoss.maxHp; }
+                        }
+                    }
+                    if (hit || b.x < -30 || b.x > w + 30 || b.y < 0 || b.y > h) contraBullets.splice(i, 1);
+                }
+            }
+
+            // =================================================================
+            // СЦЕНА 3: BATTLE CITY
+            // =================================================================
+            function initBattleCityScene() {
+                const arenaH = Math.min(260, Math.floor(h * 0.34));
+                bcCols = Math.floor((w - 40) / TILE); if (bcCols % 2 === 0) bcCols--;
+                bcRows = Math.max(6, Math.floor(arenaH / TILE));
+                bcOffsetX = Math.floor((w - bcCols * TILE) / 2); bcOffsetY = h - bcRows * TILE - 18;
+                bcGrid = Array.from({ length: bcRows }, () => Array(bcCols).fill(0));
+                const midC = Math.floor(bcCols / 2);
+
+                for (let r = 1; r < bcRows - 1; r++) {
+                    for (let c = 1; c < bcCols - 1; c++) {
+                        if (Math.abs(c - midC) <= 2 && r >= bcRows - 3) continue;
+                        if (c % 2 === 1 && (r % 2 === 1 || r % 3 === 0)) bcGrid[r][c] = (r === Math.floor(bcRows / 2) && c % 4 === 1) ? 2 : 1;
+                        else if (r === 2 && c % 3 === 0) bcGrid[r][c] = 3;
+                    }
+                }
+                bcEagle = { col: midC, row: bcRows - 1 };
+                [[bcRows - 1, midC - 1], [bcRows - 2, midC - 1], [bcRows - 2, midC], [bcRows - 2, midC + 1], [bcRows - 1, midC + 1]].forEach(([r, c]) => {
+                    if (bcGrid[r] && bcGrid[r][c] !== undefined) bcGrid[r][c] = 1;
+                });
+
+                bcTanks = [
+                    { isPlayer: true, color: '#22d3ee', trim: '#a5f3fc', x: bcOffsetX + (midC - 2) * TILE + TILE / 2, y: bcOffsetY + (bcRows - 1) * TILE + TILE / 2, dir: 0, speed: 1.6, fireCd: 15, turnCd: 40 },
+                    { isPlayer: true, color: '#10b981', trim: '#6ee7b7', x: bcOffsetX + (midC + 2) * TILE + TILE / 2, y: bcOffsetY + (bcRows - 1) * TILE + TILE / 2, dir: 0, speed: 1.6, fireCd: 25, turnCd: 50 },
+                    { isPlayer: false, color: '#818cf8', trim: '#c7d2fe', x: bcOffsetX + TILE * 1.5, y: bcOffsetY + TILE * 0.5, dir: 2, speed: 1.5, fireCd: 20, turnCd: 35 },
+                    { isPlayer: false, color: '#f43f5e', trim: '#fda4af', isBonus: true, x: bcOffsetX + midC * TILE + TILE / 2, y: bcOffsetY + TILE * 0.5, dir: 2, speed: 1.8, fireCd: 18, turnCd: 30 },
+                    { isPlayer: false, color: '#818cf8', trim: '#c7d2fe', x: bcOffsetX + (bcCols - 1.5) * TILE, y: bcOffsetY + TILE * 0.5, dir: 2, speed: 1.5, fireCd: 30, turnCd: 45 }
+                ];
+                bcBullets = [];
+            }
+
+            function canTankMove(nx, ny) {
+                const minX = bcOffsetX + 12, maxX = bcOffsetX + bcCols * TILE - 12, minY = bcOffsetY + 12, maxY = bcOffsetY + bcRows * TILE - 12;
+                if (nx < minX || nx > maxX || ny < minY || ny > maxY) return false;
+                const r = 9, corners = [[nx - r, ny - r], [nx + r, ny - r], [nx - r, ny + r], [nx + r, ny + r]];
+                for (const [cx, cy] of corners) {
+                    const col = Math.floor((cx - bcOffsetX) / TILE), row = Math.floor((cy - bcOffsetY) / TILE);
+                    if (bcGrid[row] && (bcGrid[row][col] === 1 || bcGrid[row][col] === 2)) return false;
+                    if (bcEagle && row === bcEagle.row && col === bcEagle.col) return false;
+                }
+                return true;
+            }
+
+            function updateAndDrawBattleCity() {
+                bcTrackPhase += 0.35;
+                const arenaW = bcCols * TILE, arenaH = bcRows * TILE;
+                ctx.strokeStyle = 'rgba(129, 140, 248, 0.25)'; ctx.lineWidth = 1.5;
+                ctx.strokeRect(bcOffsetX - 2, bcOffsetY - 2, arenaW + 4, arenaH + 4);
+
+                for (let r = 0; r < bcRows; r++) {
+                    for (let c = 0; c < bcCols; c++) {
+                        const tile = bcGrid[r][c]; if (tile === 0 || tile === 3) continue;
+                        const x = bcOffsetX + c * TILE, y = bcOffsetY + r * TILE;
+                        if (tile === 1) {
+                            ctx.fillStyle = 'rgba(79, 70, 229, 0.25)'; ctx.fillRect(x + 1, y + 1, TILE - 2, TILE - 2);
+                            ctx.strokeStyle = 'rgba(129, 140, 248, 0.55)'; ctx.lineWidth = 1; ctx.strokeRect(x + 1, y + 1, TILE - 2, TILE - 2);
+                        } else if (tile === 2) {
+                            ctx.fillStyle = 'rgba(226, 232, 240, 0.75)'; ctx.fillRect(x + 3, y + 3, TILE - 6, TILE - 6);
+                        }
+                    }
+                }
+
+                if (bcEagle) {
+                    const x = bcOffsetX + bcEagle.col * TILE + TILE / 2, y = bcOffsetY + bcEagle.row * TILE + TILE / 2;
+                    ctx.save(); ctx.translate(x, y); ctx.strokeStyle = '#22d3ee'; ctx.lineWidth = 1.6;
+                    ctx.beginPath(); ctx.moveTo(0, -10); ctx.lineTo(11, -5); ctx.lineTo(8, 2); ctx.lineTo(10, 10); ctx.lineTo(0, 7); ctx.lineTo(-10, 10); ctx.lineTo(-8, 2); ctx.lineTo(-11, -5); ctx.closePath(); ctx.stroke(); ctx.restore();
+                }
+
+                const DIRS = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+                bcTanks.forEach(t => {
+                    t.turnCd--;
+                    const [dx, dy] = DIRS[t.dir], nx = t.x + dx * t.speed, ny = t.y + dy * t.speed;
+                    if (canTankMove(nx, ny)) { t.x = nx; t.y = ny; } else { t.turnCd = 0; }
+                    if (t.turnCd <= 0) {
+                        t.turnCd = 35 + Math.floor(Math.random() * 65);
+                        t.x = bcOffsetX + Math.floor((t.x - bcOffsetX) / TILE) * TILE + TILE / 2;
+                        t.y = bcOffsetY + Math.floor((t.y - bcOffsetY) / TILE) * TILE + TILE / 2;
+                        t.dir = Math.floor(Math.random() * 4);
+                    }
+                    t.fireCd--;
+                    if (t.fireCd <= 0) {
+                        t.fireCd = 32 + Math.floor(Math.random() * 35);
+                        const [fx, fy] = DIRS[t.dir];
+                        bcBullets.push({ isPlayer: t.isPlayer, x: t.x + fx * 15, y: t.y + fy * 15, vx: fx * 5.8, vy: fy * 5.8, color: t.trim });
+                    }
+                    ctx.save(); ctx.translate(Math.round(t.x), Math.round(t.y)); ctx.rotate(t.dir * (Math.PI / 2));
+                    const bodyColor = (t.isBonus && Math.floor(bcTrackPhase) % 2 === 0) ? '#f43f5e' : t.color;
+                    ctx.fillStyle = bodyColor; ctx.fillRect(-7, -8, 14, 16);
+                    ctx.fillStyle = '#ffffff'; ctx.fillRect(-1.5, -14, 3, 11); ctx.restore();
+                });
+
+                for (let i = bcBullets.length - 1; i >= 0; i--) {
+                    const b = bcBullets[i]; b.x += b.vx; b.y += b.vy;
+                    ctx.fillStyle = '#ffffff'; ctx.fillRect(b.x - 2, b.y - 2, 4, 4);
+                    let hit = false;
+                    if (b.x < bcOffsetX || b.x > bcOffsetX + arenaW || b.y < bcOffsetY || b.y > bcOffsetY + arenaH) hit = true;
+                    if (!hit) {
+                        const col = Math.floor((b.x - bcOffsetX) / TILE), row = Math.floor((b.y - bcOffsetY) / TILE);
+                        if (bcGrid[row] && (bcGrid[row][col] === 1 || bcGrid[row][col] === 2)) {
+                            hit = true;
+                            if (bcGrid[row][col] === 1) { bcGrid[row][col] = 0; spawnExplosion(bcOffsetX + col * TILE + TILE / 2, bcOffsetY + row * TILE + TILE / 2, '#818cf8', 0.9); }
+                        }
+                    }
+                    if (!hit) {
+                        for (let j = 0; j < bcTanks.length; j++) {
+                            const target = bcTanks[j];
+                            if (target.isPlayer !== b.isPlayer && Math.hypot(target.x - b.x, target.y - b.y) < 13) {
+                                hit = true; spawnExplosion(target.x, target.y, target.color, 1.5);
+                                const midC = Math.floor(bcCols / 2);
+                                if (target.isPlayer) { target.x = bcOffsetX + (midC + (Math.random() > 0.5 ? -2 : 2)) * TILE + TILE / 2; target.y = bcOffsetY + (bcRows - 1) * TILE + TILE / 2; target.dir = 0; }
+                                else { target.x = bcOffsetX + (Math.random() > 0.5 ? 1.5 : bcCols - 1.5) * TILE; target.y = bcOffsetY + TILE * 0.5; target.dir = 2; }
+                                break;
+                            }
+                        }
+                    }
+                    if (hit) bcBullets.splice(i, 1);
+                }
+            }
+
+            // =================================================================
+            // СЦЕНА 4: MINECRAFT NIGHT / CREEPER PATROL (Неоново-воксельный мир)
+            // =================================================================
+            function initMinecraftScene() {
+                const gy = getGroundY();
+                mcBlocks = [];
+                const bSize = 26;
+                for (let bx = 0; bx < w + bSize; bx += bSize) {
+                    mcBlocks.push({ x: bx, y: gy, size: bSize });
+                }
+                mcTorches = [
+                    { x: w * 0.22, y: gy - 18 },
+                    { x: w * 0.52, y: gy - 18 },
+                    { x: w * 0.80, y: gy - 18 }
+                ];
+                mcMobs = [
+                    { type: 'creeper', x: w * 0.30, y: gy, vx: 0.75, phase: 0 },
+                    { type: 'creeper', x: w * 0.72, y: gy, vx: -0.65, phase: 1.5 },
+                    { type: 'enderman', x: w * 0.60, y: gy, vx: -0.45, phase: 0.8, tpCd: 180 }
+                ];
+                mcParticles = [];
+            }
+
+            function updateAndDrawMinecraft() {
+                const gy = getGroundY();
+                // Квадратная пиксельная луна в небе
+                ctx.save();
+                ctx.fillStyle = 'rgba(224, 242, 254, 0.14)';
+                ctx.strokeStyle = 'rgba(165, 243, 252, 0.35)';
+                ctx.fillRect(w - 160, 75, 42, 42);
+                ctx.strokeRect(w - 160, 75, 42, 42);
+                ctx.restore();
+
+                // Воксельная земля (дёрен с изумрудной травой)
+                mcBlocks.forEach(b => {
+                    ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+                    ctx.fillRect(b.x, b.y, b.size - 1, b.size);
+                    ctx.fillStyle = 'rgba(16, 185, 129, 0.35)';
+                    ctx.fillRect(b.x, b.y, b.size - 1, 6);
+                    ctx.strokeStyle = 'rgba(52, 211, 153, 0.2)';
+                    ctx.strokeRect(b.x, b.y, b.size - 1, b.size);
+                });
+
+                // Светящиеся факелы с искрами
+                mcTorches.forEach(t => {
+                    ctx.fillStyle = '#92400e';
+                    ctx.fillRect(t.x - 2, t.y, 4, 18);
+                    ctx.save();
+                    ctx.shadowBlur = 16; ctx.shadowColor = '#f59e0b';
+                    ctx.fillStyle = '#fef08a';
+                    ctx.fillRect(t.x - 3, t.y - 5, 6, 6);
+                    ctx.restore();
+                    if (Math.random() < 0.15) {
+                        mcParticles.push({ x: t.x, y: t.y - 6, vx: (Math.random() - 0.5) * 0.6, vy: -0.8 - Math.random() * 0.6, alpha: 0.9, color: '#fbbf24' });
+                    }
+                });
+
+                // Мобы: Криперы и Эндермен
+                mcMobs.forEach(m => {
+                    m.x += m.vx; m.phase += 0.1;
+                    if (m.x < 60 || m.x > w - 60) m.vx *= -1;
+
+                    ctx.save();
+                    ctx.translate(Math.round(m.x), Math.round(m.y));
+                    if (m.type === 'creeper') {
+                        const leg = Math.sin(m.phase) * 3;
+                        ctx.shadowBlur = 10; ctx.shadowColor = '#10b981';
+                        ctx.fillStyle = 'rgba(16, 185, 129, 0.25)'; ctx.strokeStyle = '#34d399'; ctx.lineWidth = 1.4;
+                        // Лапки
+                        ctx.fillRect(-8, -8 + leg, 6, 8); ctx.strokeRect(-8, -8 + leg, 6, 8);
+                        ctx.fillRect(2, -8 - leg, 6, 8); ctx.strokeRect(2, -8 - leg, 6, 8);
+                        // Тело и голова
+                        ctx.fillRect(-6, -26, 12, 18); ctx.strokeRect(-6, -26, 12, 18);
+                        ctx.fillRect(-8, -40, 16, 14); ctx.strokeRect(-8, -40, 16, 14);
+                        // Глаза крипера
+                        ctx.fillStyle = '#020617';
+                        ctx.fillRect(-5, -36, 3, 3); ctx.fillRect(2, -36, 3, 3);
+                        ctx.fillRect(-2, -32, 4, 4);
+                    } else {
+                        // Эндермен с фиолетовыми частицами
+                        m.tpCd--;
+                        if (m.tpCd <= 0) {
+                            m.tpCd = 220;
+                            spawnExplosion(m.x, m.y - 30, '#a855f7', 0.8);
+                            m.x = 100 + Math.random() * (w - 200);
+                        }
+                        if (Math.random() < 0.2) {
+                            mcParticles.push({ x: m.x + (Math.random() - 0.5) * 20, y: m.y - Math.random() * 50, vx: (Math.random() - 0.5) * 0.5, vy: -0.5, alpha: 0.8, color: '#c084fc' });
+                        }
+                        ctx.strokeStyle = '#a855f7'; ctx.lineWidth = 2.5;
+                        ctx.beginPath(); ctx.moveTo(-3, -24); ctx.lineTo(-3, 0); ctx.moveTo(3, -24); ctx.lineTo(3, 0); ctx.stroke();
+                        ctx.fillStyle = '#090d1a'; ctx.strokeStyle = '#c084fc'; ctx.lineWidth = 1.2;
+                        ctx.fillRect(-5, -42, 10, 18); ctx.strokeRect(-5, -42, 10, 18);
+                        ctx.fillRect(-6, -54, 12, 12); ctx.strokeRect(-6, -54, 12, 12);
+                        ctx.fillStyle = '#e879f9';
+                        ctx.fillRect(-4, -49, 3, 2); ctx.fillRect(1, -49, 3, 2);
+                    }
+                    ctx.restore();
+                });
+
+                for (let i = mcParticles.length - 1; i >= 0; i--) {
+                    const p = mcParticles[i]; p.x += p.vx; p.y += p.vy; p.alpha -= 0.02;
+                    if (p.alpha <= 0) { mcParticles.splice(i, 1); continue; }
+                    ctx.globalAlpha = p.alpha; ctx.fillStyle = p.color;
+                    ctx.fillRect(p.x, p.y, 3, 3);
+                }
+                ctx.globalAlpha = 1;
+            }
+
+            // =================================================================
+            // СЦЕНА 5: 7 DAYS TO DIE — КРОВАВАЯ ЛУНА И ОБОРОНА БАЗЫ
+            // =================================================================
+            function init7dtdScene() {
+                const gy = getGroundY();
+                sdZombies = [];
+                sdTurrets = [
+                    { x: w * 0.5 - 42, y: gy - 46, cd: 15 },
+                    { x: w * 0.5 + 42, y: gy - 46, cd: 28 }
+                ];
+                sdBullets = [];
+            }
+
+            function updateAndDraw7dtd() {
+                const gy = getGroundY();
+                sdSearchAngle += 0.02;
+
+                // Огромная багровая Кровавая Луна в небе
+                ctx.save();
+                const moonX = w * 0.82, moonY = 105;
+                const mGrad = ctx.createRadialGradient(moonX, moonY, 8, moonX, moonY, 65);
+                mGrad.addColorStop(0, 'rgba(244, 63, 94, 0.55)');
+                mGrad.addColorStop(0.5, 'rgba(225, 29, 72, 0.18)');
+                mGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                ctx.fillStyle = mGrad;
+                ctx.beginPath(); ctx.arc(moonX, moonY, 65, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = 'rgba(244, 63, 94, 0.35)';
+                ctx.beginPath(); ctx.arc(moonX, moonY, 24, 0, Math.PI * 2); ctx.fill();
+                ctx.restore();
+
+                // Земля и укреплённая база выживших по центру
+                ctx.strokeStyle = 'rgba(245, 158, 11, 0.35)'; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(w, gy); ctx.stroke();
+
+                const bx = w * 0.5;
+                ctx.save();
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+                ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 1.6;
+                ctx.fillRect(bx - 52, gy - 44, 104, 44);
+                ctx.strokeRect(bx - 52, gy - 44, 104, 44);
+
+                // Колючие шипы по краям базы
+                [-64, 54].forEach(sx => {
+                    ctx.beginPath();
+                    ctx.moveTo(bx + sx, gy); ctx.lineTo(bx + sx + 5, gy - 14); ctx.lineTo(bx + sx + 10, gy);
+                    ctx.strokeStyle = '#fbbf24'; ctx.stroke();
+                });
+
+                // Лучи прожекторов с крыши базы
+                const beamSweep = Math.sin(sdSearchAngle) * 0.35;
+                ctx.fillStyle = 'rgba(253, 224, 71, 0.05)';
+                ctx.beginPath();
+                ctx.moveTo(bx, gy - 44);
+                ctx.lineTo(bx - 260 + beamSweep * 180, gy);
+                ctx.lineTo(bx - 160 + beamSweep * 180, gy);
+                ctx.closePath(); ctx.fill();
+
+                ctx.beginPath();
+                ctx.moveTo(bx, gy - 44);
+                ctx.lineTo(bx + 160 - beamSweep * 180, gy);
+                ctx.lineTo(bx + 260 - beamSweep * 180, gy);
+                ctx.closePath(); ctx.fill();
+                ctx.restore();
+
+                // Спавн волны зомби с обеих сторон
+                if (Math.random() < 0.03 && sdZombies.length < 8) {
+                    const fromLeft = Math.random() > 0.5;
+                    sdZombies.push({
+                        x: fromLeft ? -20 : w + 20,
+                        y: gy,
+                        vx: fromLeft ? (0.9 + Math.random() * 0.7) : -(0.9 + Math.random() * 0.7),
+                        phase: Math.random() * 5,
+                        hp: 2
+                    });
+                }
+
+                // Турели на крыше ведут огонь по ближайшим зомби
+                sdTurrets.forEach(tur => {
+                    ctx.fillStyle = '#f59e0b';
+                    ctx.fillRect(tur.x - 4, tur.y - 6, 8, 6);
+                    if (tur.cd > 0) tur.cd--;
+                    if (tur.cd === 0 && sdZombies.length > 0) {
+                        const target = sdZombies.reduce((best, z) => Math.abs(z.x - tur.x) < Math.abs(best.x - tur.x) ? z : best, sdZombies[0]);
+                        if (Math.abs(target.x - tur.x) < 360) {
+                            tur.cd = 26;
+                            const ang = Math.atan2((target.y - 16) - (tur.y - 4), target.x - tur.x);
+                            sdBullets.push({ x: tur.x, y: tur.y - 4, vx: Math.cos(ang) * 9, vy: Math.sin(ang) * 9 });
+                        }
+                    }
+                });
+
+                // Отрисовка зомби
+                for (let i = sdZombies.length - 1; i >= 0; i--) {
+                    const z = sdZombies[i]; z.x += z.vx; z.phase += 0.18;
+                    const limp = Math.sin(z.phase) * 5;
+                    const dir = z.vx > 0 ? 1 : -1;
+                    ctx.save(); ctx.translate(Math.round(z.x), Math.round(z.y));
+                    ctx.strokeStyle = '#fb7185'; ctx.lineWidth = 2.6;
+                    ctx.beginPath(); ctx.moveTo(0, -12); ctx.lineTo(-3 - limp, 0); ctx.moveTo(0, -12); ctx.lineTo(3 + limp, 0); ctx.stroke();
+                    ctx.fillStyle = '#9f1239'; ctx.fillRect(-4, -24, 8, 12);
+                    // Вытянутые вперёд руки зомби
+                    ctx.beginPath(); ctx.moveTo(0, -21); ctx.lineTo(dir * 11, -19 + limp * 0.3); ctx.stroke();
+                    ctx.fillStyle = '#fda4af'; ctx.beginPath(); ctx.arc(0, -28, 3.8, 0, Math.PI * 2); ctx.fill();
+                    ctx.restore();
+
+                    if (Math.abs(z.x - bx) < 62) {
+                        spawnExplosion(z.x, z.y - 14, '#f59e0b', 0.9);
+                        sdZombies.splice(i, 1);
+                    }
+                }
+
+                // Трассеры турелей
+                for (let i = sdBullets.length - 1; i >= 0; i--) {
+                    const b = sdBullets[i]; b.x += b.vx; b.y += b.vy;
+                    ctx.strokeStyle = '#fde047'; ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.moveTo(b.x, b.y); ctx.lineTo(b.x - b.vx * 1.5, b.y - b.vy * 1.5); ctx.stroke();
+
+                    let hit = false;
+                    for (let j = sdZombies.length - 1; j >= 0; j--) {
+                        const z = sdZombies[j];
+                        if (Math.hypot(z.x - b.x, (z.y - 16) - b.y) < 14) {
+                            hit = true; z.hp--;
+                            if (z.hp <= 0) { spawnExplosion(z.x, z.y - 16, '#f43f5e', 1.1); sdZombies.splice(j, 1); }
+                            else spawnExplosion(b.x, b.y, '#fde047', 0.5);
+                            break;
+                        }
+                    }
+                    if (hit || b.y > gy || b.x < 0 || b.x > w) sdBullets.splice(i, 1);
+                }
+            }
+
+            // =================================================================
+            // ОБЩИЙ ЦИКЛ И СМЕНА 5 СЦЕН РАЗ В 60 СЕКУНД
+            // =================================================================
+            function spawnComet() {
+                const fromLeft = Math.random() > 0.4, startX = fromLeft ? -80 : w + 80, startY = Math.random() * (h * 0.45);
+                const angle = fromLeft ? (Math.random() * 0.3 + 0.2) : (Math.PI - (Math.random() * 0.3 + 0.2)), speed = 7 + Math.random() * 5;
+                comets.push({ x: startX, y: startY, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, length: 120 + Math.random() * 110, color: Math.random() > 0.5 ? '#818cf8' : '#22d3ee' });
+            }
+            setInterval(() => { if (comets.length < 2) spawnComet(); }, 5000);
+
+            setInterval(() => {
+                if (currentScene === 'space' && !ships.some(s => s.cls === 'mothership')) {
+                    const side = Math.random() > 0.5 ? 0 : 1;
+                    spawnShip(side, 'mothership', side === 0);
+                }
+            }, 18000);
+
+            function switchScene() {
+                sceneIdx = (sceneIdx + 1) % SCENES.length;
+                currentScene = SCENES[sceneIdx];
+                countdown = 60;
+                explosions = []; shields = []; flares = []; debris = []; shells = [];
+
+                if (currentScene === 'contra') {
+                    if (horizonEl) horizonEl.style.opacity = '0.15';
+                    initContraScene(); spawnContraCapsule();
+                } else if (currentScene === 'tanks') {
+                    if (horizonEl) horizonEl.style.opacity = '0.1';
+                    initBattleCityScene();
+                } else if (currentScene === 'minecraft') {
+                    if (horizonEl) horizonEl.style.opacity = '0.12';
+                    initMinecraftScene();
+                } else if (currentScene === '7dtd') {
+                    if (horizonEl) horizonEl.style.opacity = '0.15';
+                    init7dtdScene();
+                } else {
+                    if (horizonEl) horizonEl.style.opacity = '1';
+                    initSpaceScene();
+                }
+                updateSceneLabel();
+            }
+
+            function updateSceneLabel() {
+                if (switchBtn) switchBtn.innerText = `Сцена: ${SCENE_NAMES[currentScene]} (${countdown}с)`;
+            }
+
+            setInterval(() => {
+                countdown--;
+                if (countdown <= 0) switchScene();
+                else updateSceneLabel();
+            }, 1000);
+
+            window.bgEngine = {
+                nextScene() { switchScene(); },
+                action() {
+                    if (currentScene === 'space') {
+                        spawnShip(0, 'cruiser', true); spawnShip(0, 'interceptor', true);
+                        spawnShip(1, 'cruiser', false); spawnShip(1, 'wing', false);
+                    } else if (currentScene === 'contra') {
+                        spawnContraCapsule();
+                        contraHeroes.forEach(h => { h.vy = -9; h.onGround = false; });
+                    } else if (currentScene === 'tanks') {
+                        const midC = Math.floor(bcCols / 2);
+                        [[bcRows - 1, midC - 1], [bcRows - 2, midC - 1], [bcRows - 2, midC], [bcRows - 2, midC + 1], [bcRows - 1, midC + 1]].forEach(([r, c]) => {
+                            if (bcGrid[r] && bcGrid[r][c] !== undefined) bcGrid[r][c] = 1;
+                        });
+                    } else if (currentScene === 'minecraft') {
+                        mcMobs.push({ type: 'creeper', x: w * 0.5, y: getGroundY(), vx: 1.1, phase: 0 });
+                    } else {
+                        for (let i = 0; i < 4; i++) {
+                            sdZombies.push({ x: i % 2 === 0 ? 30 : w - 30, y: getGroundY(), vx: i % 2 === 0 ? 1.4 : -1.4, phase: i, hp: 2 });
+                        }
+                    }
+                }
+            };
+
+            function spawnExplosion(x, y, color, scale = 1) {
+                const count = Math.floor(14 * scale);
+                for (let i = 0; i < count; i++) {
+                    const a = Math.random() * Math.PI * 2, sp = (Math.random() * 3.5 * scale) + 0.5;
+                    explosions.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, alpha: 1, r: (Math.random() * 1.8 + 0.6) * Math.min(scale, 1.6), color: i % 3 === 0 ? '#ffffff' : color });
+                }
+                if (scale >= 1.5) {
+                    shields.push({ x, y, r: 8, maxR: 36 * scale, alpha: 0.95, color });
+                    for (let k = 0; k < 5; k++) {
+                        const a = Math.random() * Math.PI * 2;
+                        debris.push({ x, y, vx: Math.cos(a) * (0.8 + Math.random() * 1.5), vy: Math.sin(a) * (0.8 + Math.random() * 1.5), rot: Math.random() * Math.PI * 2, vrot: (Math.random() - 0.5) * 0.08, len: 4 + Math.random() * 6, alpha: 0.9, color });
+                    }
+                }
+            }
+
+            function draw() {
+                ctx.clearRect(0, 0, w, h);
+                mouse.x += (mouse.targetX - mouse.x) * 0.05; mouse.y += (mouse.targetY - mouse.y) * 0.05;
+
+                for (let i = 0; i < stars.length; i++) {
+                    const s = stars[i]; s.phase += s.twinkle;
+                    const twinkle = 0.55 + Math.sin(s.phase) * 0.45;
+                    const px = (s.x - mouse.x * s.depth + w) % w, py = (s.y - mouse.y * s.depth + h) % h;
+                    ctx.globalAlpha = s.alpha * twinkle;
+                    ctx.beginPath(); ctx.arc(px, py, s.r, 0, Math.PI * 2); ctx.fillStyle = s.color; ctx.fill();
+                }
+                ctx.globalAlpha = 1;
+
+                for (let i = comets.length - 1; i >= 0; i--) {
+                    const c = comets[i]; c.x += c.vx; c.y += c.vy;
+                    const spd = Math.hypot(c.vx, c.vy), tx = c.x - (c.vx / spd) * c.length, ty = c.y - (c.vy / spd) * c.length;
+                    const grad = ctx.createLinearGradient(c.x, c.y, tx, ty);
+                    grad.addColorStop(0, '#ffffff'); grad.addColorStop(0.25, c.color); grad.addColorStop(1, 'rgba(0,0,0,0)');
+                    ctx.beginPath(); ctx.strokeStyle = grad; ctx.lineWidth = 2; ctx.moveTo(c.x, c.y); ctx.lineTo(tx, ty); ctx.stroke();
+                    if (c.x < -200 || c.x > w + 200 || c.y > h + 200) comets.splice(i, 1);
+                }
+
+                if (currentScene === 'space') updateAndDrawSpace();
+                else if (currentScene === 'contra') updateAndDrawContra();
+                else if (currentScene === 'tanks') updateAndDrawBattleCity();
+                else if (currentScene === 'minecraft') updateAndDrawMinecraft();
+                else updateAndDraw7dtd();
+
+                for (let i = shells.length - 1; i >= 0; i--) {
+                    const sh = shells[i]; sh.x += sh.vx; sh.y += sh.vy; sh.vy += 0.25; sh.alpha -= 0.03;
+                    if (sh.alpha <= 0) { shells.splice(i, 1); continue; }
+                    ctx.globalAlpha = sh.alpha; ctx.fillStyle = '#a5f3fc'; ctx.fillRect(sh.x, sh.y, 2.5, 1.5);
+                }
+                for (let i = flares.length - 1; i >= 0; i--) {
+                    const fl = flares[i]; fl.x += fl.vx; fl.y += fl.vy; fl.vx *= 0.96; fl.vy *= 0.96; fl.alpha -= 0.022;
+                    if (fl.alpha <= 0) { flares.splice(i, 1); continue; }
+                    ctx.save(); ctx.globalAlpha = fl.alpha; ctx.shadowBlur = 10; ctx.shadowColor = '#22d3ee';
+                    ctx.beginPath(); ctx.arc(fl.x, fl.y, 2, 0, Math.PI * 2); ctx.fillStyle = '#cffafe'; ctx.fill(); ctx.restore();
+                }
+                for (let i = debris.length - 1; i >= 0; i--) {
+                    const db = debris[i]; db.x += db.vx; db.y += db.vy; db.rot += db.vrot; db.alpha -= 0.008;
+                    if (db.alpha <= 0) { debris.splice(i, 1); continue; }
+                    ctx.save(); ctx.globalAlpha = db.alpha; ctx.translate(db.x, db.y); ctx.rotate(db.rot);
+                    ctx.beginPath(); ctx.strokeStyle = db.color; ctx.lineWidth = 1.5; ctx.moveTo(-db.len / 2, 0); ctx.lineTo(db.len / 2, 0); ctx.stroke(); ctx.restore();
+                }
+                for (let i = shields.length - 1; i >= 0; i--) {
+                    const sh = shields[i]; sh.r += 0.95; sh.alpha -= 0.045;
+                    if (sh.alpha <= 0) { shields.splice(i, 1); continue; }
+                    ctx.save(); ctx.globalAlpha = sh.alpha;
+                    ctx.beginPath(); ctx.arc(sh.x, sh.y, sh.r, 0, Math.PI * 2); ctx.strokeStyle = sh.color; ctx.lineWidth = 1.6; ctx.stroke(); ctx.restore();
+                }
+                for (let i = explosions.length - 1; i >= 0; i--) {
+                    const ex = explosions[i]; ex.x += ex.vx; ex.y += ex.vy; ex.vx *= 0.96; ex.vy *= 0.96; ex.alpha -= 0.025;
+                    if (ex.alpha <= 0) { explosions.splice(i, 1); continue; }
+                    ctx.globalAlpha = ex.alpha; ctx.beginPath(); ctx.arc(ex.x, ex.y, ex.r, 0, Math.PI * 2); ctx.fillStyle = ex.color; ctx.fill();
+                }
+                ctx.globalAlpha = 1;
+                requestAnimationFrame(draw);
+            }
+            draw();
+        })();
+
+        document.querySelectorAll('.tilt-card').forEach(card => {
+            card.addEventListener('mousemove', e => {
+                const rect = card.getBoundingClientRect();
+                const x = (e.clientX - rect.left) / rect.width - 0.5;
+                const y = (e.clientY - rect.top) / rect.height - 0.5;
+                card.style.transform = `perspective(900px) rotateX(${(-y * 3.5).toFixed(2)}deg) rotateY(${(x * 3.5).toFixed(2)}deg) translateY(-2px)`;
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'perspective(900px) rotateX(0deg) rotateY(0deg) translateY(0px)';
+            });
+        });
+
+        let activeCategory = 'all', onlineOnly = false;
+
+        function toggleOnlineOnly(btn) {
+            onlineOnly = !onlineOnly;
+            const dot = document.getElementById('online-only-dot');
+            if (onlineOnly) {
+                btn.classList.add('border-emerald-500/40', 'text-emerald-300', 'bg-emerald-500/10');
+                dot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+            } else {
+                btn.classList.remove('border-emerald-500/40', 'text-emerald-300', 'bg-emerald-500/10');
+                dot.className = 'w-2 h-2 rounded-full bg-slate-600';
+            }
+            applyFilters();
+        }
+
+        function filterCategory(cat, btn) {
+            activeCategory = cat;
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.className = 'tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 bg-slate-900/65 hover:bg-slate-800/80 text-slate-300 hover:text-white border border-white/[0.08] backdrop-blur-md';
+            });
+            btn.className = 'tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 bg-indigo-600 text-white shadow-lg shadow-indigo-600/25 border border-indigo-400/30';
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const query = (document.getElementById('server-search')?.value || '').trim().toLowerCase();
+            document.querySelectorAll('.game-section').forEach(sec => {
+                const cat = sec.dataset.category;
+                if (cat === 'news') {
+                    sec.style.display = (activeCategory === 'all' || activeCategory === 'news') && !query && !onlineOnly ? 'block' : 'none';
+                    return;
+                }
+                if (activeCategory !== 'all' && activeCategory !== cat) { sec.style.display = 'none'; return; }
+
+                let visibleCards = 0;
+                sec.querySelectorAll('.server-card').forEach(card => {
+                    const isOnline = card.dataset.online === '1';
+                    const text = card.dataset.search || '';
+                    if ((!onlineOnly || isOnline) && (!query || text.includes(query))) {
+                        card.style.display = 'block'; visibleCards++;
+                    } else card.style.display = 'none';
+                });
+                sec.style.display = visibleCards > 0 ? 'block' : 'none';
+            });
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast'), textEl = document.getElementById('toast-text');
+            if (!toast || !textEl) return;
+            textEl.innerText = message;
+            toast.classList.remove('opacity-0', 'translate-y-3');
+            clearTimeout(window._toastTimer);
+            window._toastTimer = setTimeout(() => { toast.classList.add('opacity-0', 'translate-y-3'); }, 2200);
+        }
+
+        const charts = {};
+        const paletteMap = {
+            minecraft: { line: '#10b981', fill: 'rgba(16, 185, 129, 0.22)' },
+            '7dtd': { line: '#f59e0b', fill: 'rgba(245, 158, 11, 0.22)' },
+            l4d2: { line: '#f43f5e', fill: 'rgba(244, 63, 94, 0.22)' }
+        };
+
+        function openModal(id) {
+            const dataEl = document.getElementById(`modal-data-${id}`);
+            if (!dataEl) return;
+            document.getElementById('modal-game').innerText = dataEl.dataset.game;
+            document.getElementById('modal-title').innerText = dataEl.dataset.title;
+            document.getElementById('modal-address').innerText = dataEl.dataset.address;
+            document.getElementById('modal-body').innerHTML = dataEl.innerHTML;
+
+            const consoleWrap = document.getElementById('modal-console-wrap');
+            if (dataEl.dataset.steam === '1') {
+                consoleWrap.classList.remove('hidden');
+                document.getElementById('modal-console').innerText = `connect ${dataEl.dataset.address}`;
+            } else consoleWrap.classList.add('hidden');
+
+            const actions = document.getElementById('modal-actions');
+            actions.innerHTML = '';
+            if (dataEl.dataset.steam === '1') actions.innerHTML += `<a href="steam://connect/${dataEl.dataset.address}" class="flex-1 text-center py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition">Запустить через Steam</a>`;
+            if (dataEl.dataset.modpack) actions.innerHTML += `<a href="${dataEl.dataset.modpack}" target="_blank" class="flex-1 text-center py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-semibold transition">Скачать моды</a>`;
+            actions.innerHTML += `<a href="https://discord.gg/ZfDzahnXyJ" target="_blank" rel="noopener noreferrer" class="flex-1 text-center py-2.5 px-4 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/30 text-xs font-semibold transition">Помощь в Discord</a>`;
+
+            const modal = document.getElementById('guide-modal'), box = document.getElementById('modal-box');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+            box.classList.remove('modal-animate'); void box.offsetWidth; box.classList.add('modal-animate');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('guide-modal');
+            modal.classList.add('hidden'); modal.classList.remove('flex');
+        }
+
+        function openNewsModal(id) {
+            const dataEl = document.getElementById(`news-data-${id}`);
+            if (!dataEl) return;
+            document.getElementById('news-modal-tag').innerText = dataEl.dataset.tag;
+            document.getElementById('news-modal-date').innerText = dataEl.dataset.date;
+            document.getElementById('news-modal-title').innerText = dataEl.dataset.title;
+            document.getElementById('news-modal-body').innerHTML = dataEl.innerHTML;
+
+            const modal = document.getElementById('news-modal'), box = document.getElementById('news-modal-box');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+            box.classList.remove('modal-animate'); void box.offsetWidth; box.classList.add('modal-animate');
+        }
+
+        function closeNewsModal() {
+            const modal = document.getElementById('news-modal');
+            modal.classList.add('hidden'); modal.classList.remove('flex');
+        }
+
+        function copyIP(text, btn) {
+            if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text);
+            else {
+                const ta = document.createElement('textarea'); ta.value = text;
+                ta.style.position = 'fixed'; ta.style.left = '-9999px';
+                document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+            }
+            showToast(`Скопировано: ${text}`);
+            const span = btn.querySelector('span');
+            if (span) {
+                const orig = span.innerText; span.innerText = 'OK!';
+                btn.classList.add('text-emerald-400', 'bg-emerald-500/20');
+                setTimeout(() => { span.innerText = orig; btn.classList.remove('text-emerald-400', 'bg-emerald-500/20'); }, 1500);
+            }
+        }
+
+        function updateChart(srv) {
+            const ctx = document.getElementById(`chart-${srv.id}`);
+            if (!ctx) return;
+            const history = srv.history && srv.history.length > 0 ? srv.history : [{t: 'Сейчас', p: srv.players}];
+            const labels = history.map(d => d.t), values = history.map(d => d.p);
+            const palette = paletteMap[srv.category] || { line: '#6366f1', fill: 'rgba(99, 102, 241, 0.22)' };
+
+            if (charts[srv.id]) {
+                charts[srv.id].data.labels = labels; charts[srv.id].data.datasets[0].data = values; charts[srv.id].update('none');
+            } else {
+                charts[srv.id] = new Chart(ctx, {
+                    type: 'line',
+                    data: { labels: labels, datasets: [{ data: values, borderColor: palette.line, backgroundColor: palette.fill, borderWidth: 1.5, fill: true, tension: 0.4, pointRadius: 0, pointHoverRadius: 3 }] },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                enabled: true, backgroundColor: '#090d1a', titleColor: '#94a3b8', bodyColor: '#ffffff',
+                                padding: 6, displayColors: false, callbacks: { label: c => `Игроков: ${c.parsed.y}` }
+                            }
+                        },
+                        scales: { x: { display: false }, y: { display: false, beginAtZero: true, suggestedMax: Math.max(srv.max_players || 8, 4) } }
+                    }
+                });
+            }
+        }
+
+        async function manualRefresh() {
+            const icon = document.getElementById('refresh-icon');
+            if (icon) icon.classList.add('rotate-180');
+            await refreshStatus();
+            setTimeout(() => { if (icon) icon.classList.remove('rotate-180'); }, 500);
+        }
+
+        async function refreshStatus() {
+            try {
+                const res = await fetch('/api/status');
+                if (!res.ok) return;
+                const data = await res.json();
+                const servers = data.servers || [];
+                const discord = data.discord || {};
+
+                • Сеть: ${discord.online}`;
+                }
+
+                let onlineCount = 0, totalPlayers = 0;
+
+                servers.forEach(srv => {
+                    if (srv.online) { onlineCount++; totalPlayers += (srv.players || 0); }
+                    const card = document.getElementById(`card-${srv.id}`);
+                    if (!card) return;
+
+                    card.dataset.online = srv.online ? '1' : '0';
+                    const pListStr = (srv.player_list || []).join(' ');
+                    const extraTitle = srv.extra_info?.title || '';
+                    card.dataset.search = `${srv.name} ${srv.map} ${extraTitle} ${srv.public_address} ${pListStr}`.toLowerCase();
+
+                    const badge = card.querySelector('.status-badge'), dot = card.querySelector('.status-dot');
+                    const text = card.querySelector('.status-text'), pingEl = card.querySelector('.ping-badge'), beam = card.querySelector('.scan-beam');
+
+                    if (srv.online) {
+                        badge.className = 'status-badge w-[96px] justify-center inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+                        dot.className = 'status-dot w-1.5 h-1.5 rounded-full shrink-0 bg-emerald-400 animate-ping';
+                        text.innerText = 'Онлайн';
+
+                        if (srv.ping_ms) {
+                            pingEl.innerText = `${srv.ping_ms}ms`;
+                            const pColor = srv.ping_ms <= 45 ? 'text-emerald-400' : (srv.ping_ms <= 110 ? 'text-amber-400' : 'text-rose-400');
+                            pingEl.className = `ping-badge shrink-0 font-mono text-[10px] px-1.5 py-0.5 rounded bg-white/[0.05] ${pColor}`;
+                        } else pingEl.innerText = '';
+                        if (beam) beam.classList.remove('hidden');
+                    } else {
+                        badge.className = 'status-badge w-[96px] justify-center inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20';
+                        dot.className = 'status-dot w-1.5 h-1.5 rounded-full shrink-0 bg-rose-400';
+                        text.innerText = 'Офлайн';
+                        pingEl.innerText = '';
+                        if (beam) beam.classList.add('hidden');
+                    }
+
+                    card.querySelector('.map-text').innerText = srv.map || '-';
+                    card.querySelector('.uptime-text').innerText = srv.uptime || '-';
+                    card.querySelector('.players-count').innerText = `${srv.players}/${srv.max_players}`;
+                    const pct = srv.max_players > 0 ? Math.round((srv.players / srv.max_players) * 100) : 0;
+                    card.querySelector('.players-bar').style.width = `${pct}%`;
+
+                    // Обновление бейджа Кровавой Луны (7DTD) или Кампании (L4D2)
+                    const extraEl = card.querySelector('.extra-badge');
+                    if (extraEl) {
+                        if (srv.online && srv.extra_info && srv.extra_info.type === '7dtd') {
+                            extraEl.classList.remove('hidden');
+                            const cls = srv.extra_info.is_bloodmoon
+                                ? 'bg-rose-500/20 text-rose-300 border-rose-500/35 animate-pulse'
+                                : 'bg-amber-500/15 text-amber-300 border-amber-500/25';
+                            extraEl.innerHTML = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold border ${cls}">🌑 День ${srv.extra_info.day} (${srv.extra_info.time_str}) • ${srv.extra_info.status_text}</span>`;
+                        } else if (srv.online && srv.extra_info && srv.extra_info.type === 'l4d2') {
+                            extraEl.classList.remove('hidden');
+                            extraEl.innerHTML = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-rose-500/15 text-rose-300 border border-rose-500/25">🎬 ${srv.extra_info.title}</span>`;
+                        } else {
+                            extraEl.classList.add('hidden');
+                        }
+                    }
+
+                    const listContainer = card.querySelector('.players-list-container');
+                    if (srv.player_list && srv.player_list.length > 0) {
+                        listContainer.classList.remove('hidden');
+                        listContainer.innerHTML = `<span class="text-[11px] text-slate-500 mr-1">Игроки онлайн:</span>` + srv.player_list.map(p =>
+                            `<span class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-white/[0.06] text-slate-200 text-[11px] rounded-md border border-white/[0.07]"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>${p}</span>`
+                        ).join('');
+                    } else listContainer.classList.add('hidden');
+
+                    updateChart(srv);
+                });
+
+                document.getElementById('total-servers').innerText = `${onlineCount} / ${servers.length}`;
+                document.getElementById('total-players').innerText = totalPlayers;
+                document.getElementById('last-updated').innerText = new Date().toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+                applyFilters();
+            } catch (e) { console.error(e); }
+        }
+
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeModal(); closeNewsModal(); } });
+        refreshStatus();
+        setInterval(refreshStatus, 20000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель управления — IrkGames</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%236366f1'/%3E%3Cstop offset='50%25' stop-color='%238b5cf6'/%3E%3Cstop offset='100%25' stop-color='%2322d3ee'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Crect x='3' y='3' width='58' height='58' rx='13' fill='%23060914'/%3E%3Cpath d='M35 12L17 35h13l-2 17 19-23H34l1-17z' fill='%23818cf8'/%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #03050c;
+            background-image: radial-gradient(ellipse 90% 50% at 50% -10%, rgba(99, 102, 241, 0.2), transparent 70%);
+        }
+        .glass-panel {
+            background: linear-gradient(135deg, rgba(13, 19, 38, 0.76) 0%, rgba(7, 10, 22, 0.90) 100%);
+            backdrop-filter: blur(22px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 12px 35px -10px rgba(0, 0, 0, 0.8), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+        }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen font-sans antialiased text-sm">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-11">
+        <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 mb-6 border-b border-white/[0.08]">
+            <div class="flex items-center gap-3.5">
+                <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-500 via-violet-500 to-cyan-400 p-[1px] shadow-lg shadow-indigo-500/35 shrink-0">
+                    <div class="w-full h-full rounded-[15px] bg-[#060914]/95 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-xl font-extrabold bg-gradient-to-r from-white via-indigo-100 to-indigo-300 bg-clip-text text-transparent">IrkGames</h1>
+                        <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-md bg-indigo-500/15 text-indigo-300 border border-indigo-400/25">Admin</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-0.5">Управление игровыми серверами и новостями</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2.5 self-start sm:self-auto">
+                <a href="/" class="px-3.5 py-2 rounded-xl bg-slate-900/70 hover:bg-white/[0.1] border border-white/[0.08] text-xs font-medium text-slate-200 transition">
+                    На сайт ↗
+                </a>
+                <a href="/admin/logout" class="px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-xs font-medium text-rose-300 border border-rose-500/20 transition">
+                    Выйти
+                </a>
+            </div>
+        </header>
+
+        {% if msg %}
+        <div class="mb-6 p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 text-xs font-medium text-emerald-300 flex items-center justify-between">
+            <span>✓ {{ 'Вход выполнен успешно' if msg == 'ok' else msg }}</span>
+            <button onclick="this.parentElement.remove()" class="text-emerald-400 hover:text-white">✕</button>
+        </div>
+        {% endif %}
+
+        {% if err %}
+        <div class="mb-6 p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/25 text-xs font-medium text-rose-300 flex items-center justify-between">
+            <span>✕ {{ err }}</span>
+            <button onclick="this.parentElement.remove()" class="text-rose-400 hover:text-white">✕</button>
+        </div>
+        {% endif %}
+
+        <div class="flex gap-2 mb-6">
+            <button onclick="switchTab('servers', this)" class="admin-tab px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 text-white shadow-lg shadow-indigo-600/25 border border-indigo-400/30 transition">
+                Игровые серверы ({{ servers|length }})
+            </button>
+            <button onclick="switchTab('news', this)" class="admin-tab px-4 py-2 rounded-xl text-xs font-semibold bg-slate-900/65 text-slate-300 hover:text-white border border-white/[0.08] transition">
+                Новости и объявления ({{ news|length }})
+            </button>
+        </div>
+
+        <div id="tab-servers" class="space-y-6">
+            <div class="glass-panel rounded-2xl overflow-hidden">
+                <div class="px-5 py-3.5 border-b border-white/[0.08] flex items-center justify-between">
+                    <h2 class="font-bold text-white text-sm">Список серверов</h2>
+                    <button onclick="resetServerForm()" class="px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-xs font-semibold transition">
+                        + Новый сервер
+                    </button>
+                </div>
+
+                <div class="divide-y divide-white/[0.06]">
+                    {% for srv in servers %}
+                    <div class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-white/[0.02] transition">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase bg-indigo-500/15 text-indigo-300 border border-indigo-500/25">{{ srv.category_title }}</span>
+                                <span class="font-bold text-white">{{ srv.name }}</span>
+                            </div>
+                            <div class="text-xs text-slate-400 mt-1 font-mono">
+                                Опрос: {{ srv.local_ip }}:{{ srv.query_port }} ({{ srv.game_type }}) • Подключение: {{ srv.public_address }}
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2 shrink-0">
+                            <button type="button"
+                                    onclick="editServerFromBtn(this)"
+                                    data-id="{{ srv.id }}"
+                                    data-category="{{ srv.category }}"
+                                    data-category-title="{{ srv.category_title }}"
+                                    data-category-desc="{{ srv.category_desc }}"
+                                    data-name="{{ srv.name }}"
+                                    data-game-type="{{ srv.game_type }}"
+                                    data-local-ip="{{ srv.local_ip }}"
+                                    data-query-port="{{ srv.query_port }}"
+                                    data-public-address="{{ srv.public_address }}"
+                                    data-connect-type="{{ srv.connect_type }}"
+                                    data-modpack="{{ srv.modpack_url }}"
+                                    data-guide="{{ srv.guide }}"
+                                    class="px-3 py-1.5 rounded-xl bg-white/[0.07] hover:bg-white/[0.14] text-xs font-medium text-white border border-white/[0.08] transition">
+                                Изменить
+                            </button>
+                            <form action="/admin/server/delete" method="POST" onsubmit="return confirm('Удалить этот сервер?');">
+                                <input type="hidden" name="server_id" value="{{ srv.id }}">
+                                <button type="submit" class="px-3 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-xs font-medium text-rose-300 border border-rose-500/25 transition">
+                                    Удалить
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <form id="server-form" action="/admin/server/save" method="POST" class="glass-panel rounded-2xl p-6 space-y-4">
+                <div class="flex items-center justify-between border-b border-white/[0.08] pb-3">
+                    <h3 id="server-form-title" class="font-bold text-white text-base">Добавить новый сервер</h3>
+                    <button type="button" onclick="resetServerForm()" class="text-xs text-slate-400 hover:text-white transition">Очистить форму</button>
+                </div>
+
+                <input type="hidden" name="server_id" id="srv-id">
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Код игры (группировка)</label>
+                        <select name="category" id="srv-category" onchange="autoFillCategory(this.value)" class="w-full px-3 py-2 rounded-xl bg-[#050811] border border-white/10 text-xs text-white focus:outline-none focus:border-indigo-500">
+                            <option value="minecraft">minecraft (Изумрудная тема)</option>
+                            <option value="7dtd">7dtd (Янтарная тема)</option>
+                            <option value="l4d2">l4d2 (Багровая тема)</option>
+                            <option value="other">other (Индиго тема)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Название раздела игры *</label>
+                        <input type="text" name="category_title" id="srv-cat-title" value="Minecraft" required class="w-full px-3 py-2 rounded-xl bg-[#050811] border border-white/10 text-xs text-white focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Краткое описание раздела</label>
+                        <input type="text" name="category_desc" id="srv-cat-desc" value="Классическое выживание и строительство" class="w-full px-3 py-2 rounded-xl bg-[#050811] border border-white/10 text-xs text-white focus:outline-none focus:border-indigo-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Название сервера *</label>
+                        <input type="text" name="name" id="srv-name" placeholder="Например: IrkGames — Выживание #2" required class="w-full px-3 py-2 rounded-xl bg-[#050811] border border-white/10 text-xs text-white focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Протокол мониторинга *</label>
+                        <select name="game_type" id="srv-game-type" class="w-full px-3 py-2 rounded-xl bg-[#050811] border border-white/10 text-xs text-white focus:outline-none focus:border-indigo-500">
+                            <option value="a2s">a2s (7 Days to Die, L4D2, CS2, Rust, Valheim)</option>
+                            <option value="minecraft">minecraft (Minecraft Java)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Локальный IP (для опроса) *</label>
+                        <input type="text" name="local_ip" id="srv-local-ip" value="192.168.88.23" required class="w-full px-3 py-2 rounded-xl bg-[#050811] border border-white/10 text-xs font-mono text-white focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Query-порт опроса *</label>
+                        <input type="number" name="query_port" id="srv-query-port" value="25565" required class="w-full px-3 py-2 rounded-xl bg-[#050811] border border-white/10 text-xs font-mono text-white focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Публичный адрес (для игроков) *</label>
+                        <input type="text" name="public_address" id="srv-public-address" value="91.237.223.118:25565" required class="w-full px-3 py-2 rounded-xl bg-[#050811] border border-white/10 text-xs font-mono text-white focus:outline-none focus:border-indigo-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Кнопка входа</label>
+                        <select name="connect_type" id="srv-connect-type" class="w-full px-3 py-2 rounded-xl bg-[#050811] border border-white/10 text-xs text-white focus:outline-none focus:border-indigo-500">
+                            <option value="steam">steam (Кнопка «Играть» через steam://connect/)</option>
+                            <option value="copy">copy (Кнопка «Войти» и копирование IP)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Ссылка на скачивание модов/сборки (необязательно)</label>
+                        <input type="text" name="modpack_url" id="srv-modpack" placeholder="https://..." class="w-full px-3 py-2 rounded-xl bg-[#050811] border border-white/10 text-xs text-white focus:outline-none focus:border-indigo-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Инструкция по подключению (поддерживается HTML: &lt;br&gt;, &lt;code&gt;, &lt;b&gt;)</label>
+                    <textarea name="guide" id="srv-guide" rows="3" class="w-full px-3 py-2 rounded-xl bg-[#050811] border border-white/10 text-xs text-white focus:outline-none focus:border-indigo-500">1. Скопируйте адрес сервера.<br>2. Вставьте в сетевой игре и подключайтесь.</textarea>
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-lg shadow-indigo-600/25 transition">
+                        Сохранить сервер
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div id="tab-news" class="hidden space-y-6">
+            <div class="glass-panel rounded-2xl overflow-hidden">
+                <div class="px-5 py-3.5 border-b border-white/[0.08] flex items-center justify-between">
+                    <h2 class="font-bold text-white text-sm">Опубликованные новости</h2>
+                    <button onclick="resetNewsForm()" class="px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-xs font-semibold transition">
+                        + Добавить новость
+                    </button>
+                </div>
+
+                <div class="divide-y divide-white/[0.06]">
+                    {% for item in news %}
+                    <div class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-white/[0.02] transition">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase bg-indigo-500/15 text-indigo-300 border border-indigo-500/25">{{ item.tag }}</span>
+                                <span class="text-xs font-mono text-slate-500">{{ item.date }}</span>
+                                <span class="font-bold text-white">{{ item.title }}</span>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-1">{{ item.summary }}</p>
+                        </div>
+
+                        <div class="flex items-center gap-2 shrink-0">
+                            <button type="button"
+                                    onclick="editNewsFromBtn(this)"
+                                    data-id="{{ item.id }}"
+                                    data-tag="{{ item.tag }}"
+                                    data-tag-color="{{ item.tag_color }}"
+                                    data-date="{{ item.date }}"
+                                    data-title="{{ item.title }}"
+                                    data-summary="{{ item.summary }}"
+                                    data-content="{{ item.content }}"
+                                    class="px-3 py-1.5 rounded-xl bg-white/[0.07] hover:bg-white/[0.14] text-xs font-medium text-white border border-white/[0.08] transition">
+                                Изменить
+                            </button>
+                            <form action="/admin/news/delete" method="POST" onsubmit="return confirm('Удалить эту новость?');">
+                                <input type="hidden" name="news_id" value="{{ item.id }}">
+                                <button type="submit" class="px-3 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-xs font-medium text-rose-300 border border-rose-500/25 transition">
+                                    Удалить
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <form id="news-form" action="/admin/news/save" method="POST" class="glass-panel rounded-2xl p-6 space-y-4">
+                <div class="flex items-center justify-between border-b border-white/[0.08] pb-3">
+                    <h3 id="news-form-title" class="font-bold text-white text-base">Опубликовать новость</h3>
+                    <button type="button" onclick="resetNewsForm()" class="text-xs text-slate-400 hover:text-white transition">Очистить форму</button>
+                </div>
+
+                <input type="hidden" name="news_id" id="news-id">
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Тег (метка) *</label>
+                        <input type="text" name="tag" id="news-tag" placeholder="Обновление / Вайп / Ивент" required class="w-full px-3 py-2 rounded-xl bg-[#050811] border border-white/10 text-xs text-white focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Цвет тега</label>
+                        <select name="tag_color" id="news-tag-color" class="w-full px-3 py-2 rounded-xl bg-[#050811] border border-white/10 text-xs text-white focus:outline-none focus:border-indigo-500">
+                            <option value="indigo">Синий (Индиго)</option>
+                            <option value="emerald">Зелёный (Minecraft)</option>
+                            <option value="amber">Янтарный (7 Days to Die)</option>
+                            <option value="rose">Красный (Left 4 Dead 2 / Важно)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Дата (если пусто — сегодня)</label>
+                        <input type="text" name="date" id="news-date" placeholder="26.11.2026" class="w-full px-3 py-2 rounded-xl bg-[#050811] border border-white/10 text-xs font-mono text-white focus:outline-none focus:border-indigo-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Заголовок новости *</label>
+                    <input type="text" name="title" id="news-title" required class="w-full px-3 py-2 rounded-xl bg-[#050811] border border-white/10 text-xs text-white focus:outline-none focus:border-indigo-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Краткий анонс (отображается на карточке) *</label>
+                    <input type="text" name="summary" id="news-summary" required class="w-full px-3 py-2 rounded-xl bg-[#050811] border border-white/10 text-xs text-white focus:outline-none focus:border-indigo-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Полный текст новости (открывается при клике, можно использовать &lt;br&gt;, &lt;b&gt;, &lt;code&gt;) *</label>
+                    <textarea name="content" id="news-content" rows="4" required class="w-full px-3 py-2 rounded-xl bg-[#050811] border border-white/10 text-xs text-white focus:outline-none focus:border-indigo-500"></textarea>
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-lg shadow-indigo-600/25 transition">
+                        Сохранить новость
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tab, btn) {
+            document.querySelectorAll('.admin-tab').forEach(b => {
+                b.className = 'admin-tab px-4 py-2 rounded-xl text-xs font-semibold bg-slate-900/65 text-slate-300 hover:text-white border border-white/[0.08] transition';
+            });
+            btn.className = 'admin-tab px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 text-white shadow-lg shadow-indigo-600/25 border border-indigo-400/30 transition';
+
+            document.getElementById('tab-servers').classList.toggle('hidden', tab !== 'servers');
+            document.getElementById('tab-news').classList.toggle('hidden', tab !== 'news');
+        }
+
+        function autoFillCategory(val) {
+            const presets = {
+                minecraft: { title: 'Minecraft', desc: 'Классическое выживание, строительство и исследование мира', type: 'minecraft', conn: 'copy' },
+                '7dtd': { title: '7 Days to Die', desc: 'Выживание в постапокалипсисе, крафт и оборона от орды', type: 'a2s', conn: 'steam' },
+                l4d2: { title: 'Left 4 Dead 2', desc: 'Кооперативное прохождение кампаний и режим Сражения', type: 'a2s', conn: 'steam' }
+            };
+            if (presets[val]) {
+                document.getElementById('srv-cat-title').value = presets[val].title;
+                document.getElementById('srv-cat-desc').value = presets[val].desc;
+                document.getElementById('srv-game-type').value = presets[val].type;
+                document.getElementById('srv-connect-type').value = presets[val].conn;
+            }
+        }
+
+        function editServerFromBtn(btn) {
+            const d = btn.dataset;
+            document.getElementById('server-form-title').innerText = 'Редактирование сервера: ' + d.name;
+            document.getElementById('srv-id').value = d.id || '';
+            document.getElementById('srv-category').value = d.category || 'other';
+            document.getElementById('srv-cat-title').value = d.categoryTitle || '';
+            document.getElementById('srv-cat-desc').value = d.categoryDesc || '';
+            document.getElementById('srv-name').value = d.name || '';
+            document.getElementById('srv-game-type').value = d.gameType || 'a2s';
+            document.getElementById('srv-local-ip').value = d.localIp || '';
+            document.getElementById('srv-query-port').value = d.queryPort || '';
+            document.getElementById('srv-public-address').value = d.publicAddress || '';
+            document.getElementById('srv-connect-type').value = d.connectType || 'steam';
+            document.getElementById('srv-modpack').value = d.modpack || '';
+            document.getElementById('srv-guide').value = d.guide || '';
+            document.getElementById('server-form').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function resetServerForm() {
+            document.getElementById('server-form').reset();
+            document.getElementById('srv-id').value = '';
+            document.getElementById('server-form-title').innerText = 'Добавить новый сервер';
+        }
+
+        function editNewsFromBtn(btn) {
+            const d = btn.dataset;
+            document.getElementById('news-form-title').innerText = 'Редактирование новости';
+            document.getElementById('news-id').value = d.id || '';
+            document.getElementById('news-tag').value = d.tag || '';
+            document.getElementById('news-tag-color').value = d.tagColor || 'indigo';
+            document.getElementById('news-date').value = d.date || '';
+            document.getElementById('news-title').value = d.title || '';
+            document.getElementById('news-summary').value = d.summary || '';
+            document.getElementById('news-content').value = d.content || '';
+            document.getElementById('news-form').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function resetNewsForm() {
+            document.getElementById('news-form').reset();
+            document.getElementById('news-id').value = '';
+            document.getElementById('news-form-title').innerText = 'Опубликовать новость';
+        }
+    </script>
+</body>
+</html>

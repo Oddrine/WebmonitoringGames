@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход в панель управления — IrkGames</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%236366f1'/%3E%3Cstop offset='50%25' stop-color='%238b5cf6'/%3E%3Cstop offset='100%25' stop-color='%2322d3ee'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Crect x='3' y='3' width='58' height='58' rx='13' fill='%23060914'/%3E%3Cpath d='M35 12L17 35h13l-2 17 19-23H34l1-17z' fill='%23818cf8'/%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: { fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] } } }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #03050c;
+            background-image: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(99, 102, 241, 0.25), transparent 70%);
+        }
+        .glass-panel {
+            background: linear-gradient(135deg, rgba(13, 19, 38, 0.78) 0%, rgba(7, 10, 22, 0.92) 100%);
+            backdrop-filter: blur(22px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.85), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+        }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen flex items-center justify-center p-4 font-sans antialiased">
+    <div class="glass-panel w-full max-w-sm rounded-2xl p-6">
+        <div class="text-center mb-6">
+            <div class="w-11 h-11 mx-auto rounded-2xl bg-gradient-to-br from-indigo-500 via-violet-500 to-cyan-400 p-[1px] shadow-lg shadow-indigo-500/30 mb-3">
+                <div class="w-full h-full rounded-[15px] bg-[#060914] flex items-center justify-center text-indigo-400">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                </div>
+            </div>
+            <h1 class="text-lg font-extrabold bg-gradient-to-r from-white to-indigo-200 bg-clip-text text-transparent">IrkGames Admin</h1>
+            <p class="text-xs text-slate-400 mt-1">Авторизация администратора портала</p>
+        </div>
+
+        {% if err %}
+        <div class="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/25 text-xs text-rose-300 text-center">
+            {{ err }}
+        </div>
+        {% endif %}
+
+        <form action="/admin/login" method="POST" class="space-y-4">
+            <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1.5">Логин</label>
+                <input type="text" name="username" required autofocus
+                       class="w-full px-3.5 py-2.5 rounded-xl bg-[#050811] border border-white/10 text-sm text-white focus:outline-none focus:border-indigo-500 transition">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1.5">Пароль</label>
+                <input type="password" name="password" required
+                       class="w-full px-3.5 py-2.5 rounded-xl bg-[#050811] border border-white/10 text-sm text-white focus:outline-none focus:border-indigo-500 transition">
+            </div>
+            <button type="submit" class="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold shadow-lg shadow-indigo-600/25 transition">
+                Войти в панель
+            </button>
+        </form>
+
+        <div class="mt-5 text-center">
+            <a href="/" class="text-xs text-slate-500 hover:text-indigo-300 transition">← Вернуться на портал</a>
+        </div>
+    </div>
+</body>
+</html>
