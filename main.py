@@ -1,3 +1,4 @@
+import news_parser
 import asyncio
 import hmac
 import json
@@ -571,3 +572,8 @@ async def delete_news(request: Request, news_id: str = Form(...)):
     data["news"] = [n for n in data.get("news", []) if n["id"] != news_id]
     save_data(data)
     return RedirectResponse(url="/admin?msg=News+deleted", status_code=303)
+
+
+@app.get("/api/game-news")
+async def api_game_news():
+    return {"news": news_parser.get_game_news()}
