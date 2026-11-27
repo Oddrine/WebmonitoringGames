@@ -149,6 +149,31 @@
             animation: modalPop 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
     </style>
+
+<style>
+  /* Выравнивание панели вкладок и соцсетей в одну строку */
+  .nav-tabs-bar, .social-links-bar,
+  nav .flex.flex-wrap, header .flex.flex-wrap {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    gap: 0.375rem !important;
+  }
+  .nav-tabs-bar::-webkit-scrollbar,
+  .social-links-bar::-webkit-scrollbar {
+    display: none;
+  }
+  .nav-tabs-bar button, .nav-tabs-bar a,
+  .social-links-bar a, .social-links-bar button {
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    padding-left: 0.7rem !important;
+    padding-right: 0.7rem !important;
+    font-size: 0.8125rem !important;
+  }
+</style>
+
 </head>
 <body class="text-slate-100 min-h-screen font-sans antialiased selection:bg-indigo-500/30 selection:text-indigo-200">
     <div class="space-bg">
@@ -222,7 +247,7 @@
 
         <!-- Единая панель навигации: Вкладки + Соцсети -->
         <div class="animate-reveal flex flex-col lg:flex-row lg:items-center justify-between gap-3.5 mb-5" style="animation-delay: 0.08s;">
-            <nav class="flex flex-wrap items-center gap-2">
+            <nav class="nav-tabs-bar flex items-center gap-1.5">
                 <button onclick="filterCategory('all', this)" class="tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 bg-indigo-600 text-white shadow-lg shadow-indigo-600/25 border border-indigo-400/30">
                     Обзор <span class="ml-1 opacity-75 font-mono">{{ servers|length }}</span>
                 </button>
@@ -1827,7 +1852,7 @@
         </h2>
         <p class="text-xs text-slate-400 mt-1">Автоматическая сводка из Steam и Mojang (обновляется каждые 30 мин)</p>
       </div>
-      <div class="flex flex-wrap gap-2" id="news-filters">
+      <div class="nav-tabs-bar flex items-center gap-1.5" id="news-filters">
         <button onclick="filterGameNews('all')" data-filter="all" class="news-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-600 text-white transition">Все</button>
         <button onclick="filterGameNews('minecraft')" data-filter="minecraft" class="news-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:bg-slate-700 transition">Minecraft</button>
         <button onclick="filterGameNews('7dtd')" data-filter="7dtd" class="news-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:bg-slate-700 transition">7 Days to Die</button>
