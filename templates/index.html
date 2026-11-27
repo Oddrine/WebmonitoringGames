@@ -174,6 +174,44 @@
   }
 </style>
 
+
+<style id="navbar-align-fix">
+  /* Общий контейнер навигации и соцсетей */
+  header .flex.flex-wrap,
+  nav .flex.flex-wrap,
+  .nav-tabs-bar,
+  div:has(> a[href*="discord"]),
+  div:has(> a[href*="t.me"]) {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 0.4rem !important;
+  }
+  /* Контейнер-родитель, содержащий и вкладки, и соцсети */
+  div:has(> .nav-tabs-bar) {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+  }
+  div:has(> .nav-tabs-bar)::-webkit-scrollbar {
+    display: none !important;
+  }
+  .nav-tabs-bar button,
+  .nav-tabs-bar a,
+  div:has(> a[href*="discord"]) a,
+  div:has(> a[href*="t.me"]) a {
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    padding: 0.42rem 0.72rem !important;
+    font-size: 0.8rem !important;
+    line-height: 1.2 !important;
+  }
+</style>
+
 </head>
 <body class="text-slate-100 min-h-screen font-sans antialiased selection:bg-indigo-500/30 selection:text-indigo-200">
     <div class="space-bg">
@@ -1925,6 +1963,360 @@ fetch('/api/game-news')
     document.getElementById('game-news-grid').innerHTML =
       '<div class="text-sm text-slate-400 col-span-full py-4 text-center">Не удалось загрузить ленту обновлений.</div>';
   });
+</script>
+
+
+<canvas id="space-battle-canvas" style="position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;"></canvas>
+<script id="space-battle-engine">
+(function() {
+  // Удаляем старые фоновые canvas, если остались
+  document.querySelectorAll('canvas').forEach(c => {
+    if (c.id !== 'space-battle-canvas' && !c.closest('.chart-container') && !c.id.includes('chart')) {
+      c.style.display = 'none';
+    }
+  });
+
+  const canvas = document.getElementById('space-battle-canvas');
+  const ctx = canvas.getContext('2d');
+  let W = canvas.width = window.innerWidth;
+  let H = canvas.height = window.innerHeight;
+
+  window.addEventListener('resize', () => {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  });
+
+  // Звёзды (3 слоя параллакса)
+  const stars = Array.from({ length: 160 }, () => ({
+    x: Math.random() * W,
+    y: Math.random() * H,
+    r: Math.random() * 1.6 + 0.3,
+    speed: Math.random() * 0.25 + 0.05,
+    alpha: Math.random() * 0.7 + 0.2,
+    twinkle: Math.random() * Math.PI * 2
+  }));
+
+  // Туманности
+  const nebulae = [
+    { x: W * 0.22, y: H * 0.28, r: 340, color: 'rgba(56, 189, 248, 0.045)' },
+    { x: W * 0.78, y: H * 0.65, r: 380, color: 'rgba(139, 92, 246, 0.045)' },
+    { x: W * 0.55, y: H * 0.20, r: 280, color: 'rgba(244, 63, 94, 0.03)' }
+  ];
+
+  // Астероиды
+  const asteroids = Array.from({ length: 9 }, () => ({
+    x: Math.random() * W,
+    y: Math.random() * H,
+    vx: (Math.random() - 0.5) * 0.35,
+    vy: (Math.random() - 0.5) * 0.35,
+    rot: Math.random() * Math.PI * 2,
+    vrot: (Math.random() - 0.5) * 0.008,
+    size: Math.random() * 14 + 8,
+    verts: Array.from({ length: 8 }, (_, i) => {
+      const a = (i / 8) * Math.PI * 2;
+      const dist = 0.72 + Math.random() * 0.38;
+      return [Math.cos(a) * dist, Math.sin(a) * dist];
+    })
+  }));
+
+  const ships = [];
+  const projectiles = [];
+  const explosions = [];
+  const shields = [];
+
+  function spawnShip(team, forcedType) {
+    const type = forcedType || (Math.random() < 0.22 ? 'cruiser' : (Math.random() < 0.5 ? 'interceptor' : 'fighter'));
+    const fromLeft = team === 0;
+    const x = fromLeft ? -60 : W + 60;
+    const y = Math.random() * (H * 0.78) + H * 0.11;
+    const cfg = {
+      cruiser:     { hp: 140, maxHp: 140, speed: 0.75, turn: 0.014, size: 22, reload: 95,  color: team === 0 ? '#38bdf8' : '#fb7185' },
+      interceptor: { hp: 35,  maxHp: 35,  speed: 2.35, turn: 0.048, size: 9,  reload: 42,  color: team === 0 ? '#7dd3fc' : '#fda4af' },
+      fighter:     { hp: 55,  maxHp: 55,  speed: 1.65, turn: 0.032, size: 12, reload: 58,  color: team === 0 ? '#60a5fa' : '#f97316' }
+    }[type];
+
+    ships.push({
+      team, type, x, y,
+      angle: fromLeft ? (Math.random() - 0.5) * 0.5 : Math.PI + (Math.random() - 0.5) * 0.5,
+      ...cfg,
+      cooldown: Math.floor(Math.random() * cfg.reload),
+      trail: []
+    });
+  }
+
+  for (let i = 0; i < 6; i++) spawnShip(0, i === 0 ? 'cruiser' : null);
+  for (let i = 0; i < 6; i++) spawnShip(1, i === 0 ? 'cruiser' : null);
+
+  function addExplosion(x, y, scale, color) {
+    explosions.push({ x, y, r: 2, maxR: 26 * scale, alpha: 1, color,
+      sparks: Array.from({ length: Math.floor(10 * scale) }, () => {
+        const a = Math.random() * Math.PI * 2;
+        const sp = (Math.random() * 2.5 + 0.8) * scale;
+        return { x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1 };
+      })
+    });
+  }
+
+  function update() {
+    // Поддержание численности флотов
+    const t0 = ships.filter(s => s.team === 0).length;
+    const t1 = ships.filter(s => s.team === 1).length;
+    if (t0 < 6 && Math.random() < 0.03) spawnShip(0);
+    if (t1 < 6 && Math.random() < 0.03) spawnShip(1);
+
+    // Звёзды и астероиды
+    for (const s of stars) {
+      s.x -= s.speed;
+      s.twinkle += 0.03;
+      if (s.x < 0) { s.x = W; s.y = Math.random() * H; }
+    }
+    for (const a of asteroids) {
+      a.x += a.vx; a.y += a.vy; a.rot += a.vrot;
+      if (a.x < -40) a.x = W + 40;
+      if (a.x > W + 40) a.x = -40;
+      if (a.y < -40) a.y = H + 40;
+      if (a.y > H + 40) a.y = -40;
+    }
+
+    // Корабли ИИ
+    for (let i = ships.length - 1; i >= 0; i--) {
+      const s = ships[i];
+      let target = null, bestDist = Infinity;
+      for (const other of ships) {
+        if (other.team !== s.team) {
+          const d = Math.hypot(other.x - s.x, other.y - s.y);
+          if (d < bestDist) { bestDist = d; target = other; }
+        }
+      }
+
+      if (target) {
+        const desired = Math.atan2(target.y - s.y, target.x - s.x);
+        // Лёгкое уклонение при слишком близком сближении
+        const finalAngle = bestDist < 110 ? desired + 1.1 : desired;
+        let diff = finalAngle - s.angle;
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        s.angle += Math.max(-s.turn, Math.min(s.turn, diff));
+
+        if (s.cooldown > 0) s.cooldown--;
+        if (s.cooldown <= 0 && bestDist < 520 && Math.abs(diff) < 0.35) {
+          if (s.type === 'cruiser') {
+            // Залп плазменной торпедой + двойной лазер
+            projectiles.push({
+              x: s.x + Math.cos(s.angle) * s.size,
+              y: s.y + Math.sin(s.angle) * s.size,
+              vx: Math.cos(s.angle) * 4.2,
+              vy: Math.sin(s.angle) * 4.2,
+              team: s.team, kind: 'torpedo', dmg: 28, life: 130,
+              color: s.team === 0 ? '#38bdf8' : '#fb7185'
+            });
+          } else {
+            projectiles.push({
+              x: s.x + Math.cos(s.angle) * s.size,
+              y: s.y + Math.sin(s.angle) * s.size,
+              vx: Math.cos(s.angle) * 6.5,
+              vy: Math.sin(s.angle) * 6.5,
+              team: s.team, kind: 'laser', dmg: 12, life: 85,
+              color: s.team === 0 ? '#38bdf8' : '#f97316'
+            });
+          }
+          s.cooldown = s.reload + Math.floor(Math.random() * 20);
+        }
+      }
+
+      s.x += Math.cos(s.angle) * s.speed;
+      s.y += Math.sin(s.angle) * s.speed;
+
+      // Мягкий разворот от краёв экрана
+      if (s.x < 40) s.angle += 0.04;
+      if (s.x > W - 40) s.angle += 0.04;
+      if (s.y < 40) s.angle += 0.04;
+      if (s.y > H - 40) s.angle += 0.04;
+
+      s.trail.push({ x: s.x - Math.cos(s.angle) * s.size * 0.8, y: s.y - Math.sin(s.angle) * s.size * 0.8 });
+      if (s.trail.length > (s.type === 'cruiser' ? 18 : 10)) s.trail.shift();
+    }
+
+    // Снаряды и торпеды
+    for (let i = projectiles.length - 1; i >= 0; i--) {
+      const p = projectiles[i];
+      if (p.kind === 'torpedo') {
+        // Лёгкое самонаведение торпед
+        let nearest = null, nd = 280;
+        for (const s of ships) {
+          if (s.team !== p.team) {
+            const d = Math.hypot(s.x - p.x, s.y - p.y);
+            if (d < nd) { nd = d; nearest = s; }
+          }
+        }
+        if (nearest) {
+          const ang = Math.atan2(nearest.y - p.y, nearest.x - p.x);
+          p.vx = p.vx * 0.94 + Math.cos(ang) * 4.2 * 0.06;
+          p.vy = p.vy * 0.94 + Math.sin(ang) * 4.2 * 0.06;
+        }
+      }
+      p.x += p.vx; p.y += p.vy; p.life--;
+
+      let hit = false;
+      for (let j = ships.length - 1; j >= 0; j--) {
+        const s = ships[j];
+        if (s.team !== p.team && Math.hypot(s.x - p.x, s.y - p.y) < s.size + 4) {
+          s.hp -= p.dmg;
+          hit = true;
+          shields.push({ x: s.x, y: s.y, r: s.size + 6, alpha: 0.75, color: s.color });
+          if (s.hp <= 0) {
+            addExplosion(s.x, s.y, s.type === 'cruiser' ? 1.8 : 0.9, s.color);
+            ships.splice(j, 1);
+          } else {
+            addExplosion(p.x, p.y, 0.35, p.color);
+          }
+          break;
+        }
+      }
+      if (hit || p.life <= 0) projectiles.splice(i, 1);
+    }
+
+    // Взрывы и щиты
+    for (let i = explosions.length - 1; i >= 0; i--) {
+      const e = explosions[i];
+      e.r += (e.maxR - e.r) * 0.14;
+      e.alpha -= 0.025;
+      for (const sp of e.sparks) { sp.x += sp.vx; sp.y += sp.vy; sp.life -= 0.03; }
+      if (e.alpha <= 0) explosions.splice(i, 1);
+    }
+    for (let i = shields.length - 1; i >= 0; i--) {
+      shields[i].alpha -= 0.04;
+      if (shields[i].alpha <= 0) shields.splice(i, 1);
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    // Туманности
+    for (const n of nebulae) {
+      const grad = ctx.createRadialGradient(n.x, n.y, 10, n.x, n.y, n.r);
+      grad.addColorStop(0, n.color);
+      grad.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    // Звёзды
+    for (const s of stars) {
+      const a = s.alpha * (0.7 + 0.3 * Math.sin(s.twinkle));
+      ctx.fillStyle = `rgba(226, 232, 240, ${a})`;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Астероиды
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.22)';
+    ctx.fillStyle = 'rgba(30, 41, 59, 0.35)';
+    ctx.lineWidth = 1;
+    for (const a of asteroids) {
+      ctx.save();
+      ctx.translate(a.x, a.y);
+      ctx.rotate(a.rot);
+      ctx.beginPath();
+      a.verts.forEach(([vx, vy], idx) => {
+        if (idx === 0) ctx.moveTo(vx * a.size, vy * a.size);
+        else ctx.lineTo(vx * a.size, vy * a.size);
+      });
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Корабли
+    for (const s of ships) {
+      // Инверсионный след двигателя
+      if (s.trail.length > 1) {
+        ctx.beginPath();
+        s.trail.forEach((pt, idx) => {
+          if (idx === 0) ctx.moveTo(pt.x, pt.y);
+          else ctx.lineTo(pt.x, pt.y);
+        });
+        ctx.strokeStyle = s.color + '44';
+        ctx.lineWidth = s.type === 'cruiser' ? 3 : 1.5;
+        ctx.stroke();
+      }
+
+      ctx.save();
+      ctx.translate(s.x, s.y);
+      ctx.rotate(s.angle);
+      ctx.fillStyle = '#0f172a';
+      ctx.strokeStyle = s.color;
+      ctx.lineWidth = s.type === 'cruiser' ? 2 : 1.4;
+
+      ctx.beginPath();
+      if (s.type === 'cruiser') {
+        ctx.moveTo(22, 0); ctx.lineTo(8, -9); ctx.lineTo(-16, -11);
+        ctx.lineTo(-22, -5); ctx.lineTo(-22, 5); ctx.lineTo(-16, 11); ctx.lineTo(8, 9);
+      } else if (s.type === 'interceptor') {
+        ctx.moveTo(11, 0); ctx.lineTo(-8, -7); ctx.lineTo(-4, 0); ctx.lineTo(-8, 7);
+      } else {
+        ctx.moveTo(13, 0); ctx.lineTo(-6, -8); ctx.lineTo(-10, -3);
+        ctx.lineTo(-10, 3); ctx.lineTo(-6, 8);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Энергетические щиты
+    for (const sh of shields) {
+      ctx.strokeStyle = sh.color + Math.floor(sh.alpha * 255).toString(16).padStart(2, '0');
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(sh.x, sh.y, sh.r, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // Снаряды
+    for (const p of projectiles) {
+      if (p.kind === 'torpedo') {
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 3.2, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        ctx.strokeStyle = p.color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(p.x - p.vx * 2.2, p.y - p.vy * 2.2);
+        ctx.stroke();
+      }
+    }
+
+    // Взрывы
+    for (const e of explosions) {
+      ctx.strokeStyle = e.color + Math.floor(Math.max(0, e.alpha) * 200).toString(16).padStart(2, '0');
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
+      ctx.stroke();
+
+      for (const sp of e.sparks) {
+        if (sp.life > 0) {
+          ctx.fillStyle = e.color;
+          ctx.fillRect(sp.x, sp.y, 2, 2);
+        }
+      }
+    }
+  }
+
+  function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+  }
+  loop();
+})();
 </script>
 
 </body>

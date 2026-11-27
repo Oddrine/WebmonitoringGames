@@ -13,25 +13,41 @@ STEAM_GAMES = [
     {"appid": 550, "game": "Left 4 Dead 2", "tag": "l4d2", "color": "emerald"},
 ]
 
-def _clean_html(text: str, max_len: int = 240) -> str:
+def _clean_html(text: str, max_len: int = 230) -> str:
     text = re.sub(r"\[/?[a-zA-Z0-9*=_]+\]", " ", text)
     text = re.sub(r"<[^>]+>", " ", text)
     text = re.sub(r"\s+", " ", text).strip()
     return (text[:max_len] + "...") if len(text) > max_len else text
 
 def _translate_ru(text: str) -> str:
-    if not text or re.search(r"[а-яА-ЯёЁ]{4,}", text):
+    if not text or len(re.findall(r"[а-яА-ЯёЁ]", text)) > len(text) * 0.3:
         return text
+    snippet = text[:450]
+    # 1. Google Translate endpoint
     try:
-        q = urllib.parse.quote(text[:450])
-        url = f"https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=ru&dt=t&q={q}"
+        q = urllib.parse.quote(snippet)
+        url = f"https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ru&dt=t&q={q}"
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+        with urllib.request.urlopen(req, timeout=6) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        res = "".join(part[0] for part in data[0] if part and part[0]).strip()
+        if res and re.search(r"[а-яА-ЯёЁ]", res):
+            return res
+    except Exception:
+        pass
+    # 2. Резервный MyMemory API
+    try:
+        q = urllib.parse.quote(snippet)
+        url = f"https://api.mymemory.translated.net/get?q={q}&langpair=en|ru"
         req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
         with urllib.request.urlopen(req, timeout=6) as resp:
             data = json.loads(resp.read().decode("utf-8"))
-        translated = "".join(part[0] for part in data[0] if part[0])
-        return translated or text
+        res = data.get("responseData", {}).get("translatedText", "").strip()
+        if res and re.search(r"[а-яА-ЯёЁ]", res):
+            return res
     except Exception:
-        return text
+        pass
+    return text
 
 def _fetch_steam_news() -> list:
     results = []
@@ -46,14 +62,12 @@ def _fetch_steam_news() -> list:
                 data = json.loads(resp.read().decode("utf-8"))
             for item in data.get("appnews", {}).get("newsitems", []):
                 ts = int(item.get("date", 0))
-                title = _translate_ru(item.get("title", "Обновление"))
-                summary = _translate_ru(_clean_html(item.get("contents", "")))
                 results.append({
                     "game": g["game"],
                     "tag": g["tag"],
                     "color": g["color"],
-                    "title": title,
-                    "summary": summary,
+                    "title": _translate_ru(item.get("title", "Обновление")),
+                    "summary": _translate_ru(_clean_html(item.get("contents", ""))),
                     "url": item.get("url", ""),
                     "timestamp": ts,
                     "date": datetime.fromtimestamp(ts).strftime("%d.%m.%Y") if ts else "",
@@ -98,7 +112,6 @@ def get_game_news(force: bool = False) -> list:
     now = time.time()
     if not force and _cache["items"] and (now - _cache["timestamp"] < CACHE_TTL):
         return _cache["items"]
-
     items = _fetch_steam_news() + _fetch_minecraft_news()
     items.sort(key=lambda x: x["timestamp"], reverse=True)
     if items:
