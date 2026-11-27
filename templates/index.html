@@ -175,43 +175,21 @@
 </style>
 
 
-<style id="navbar-align-fix">
-  /* Общий контейнер навигации и соцсетей */
-  header .flex.flex-wrap,
-  nav .flex.flex-wrap,
-  .nav-tabs-bar,
-  div:has(> a[href*="discord"]),
-  div:has(> a[href*="t.me"]) {
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    align-items: center !important;
-    gap: 0.4rem !important;
-  }
-  /* Контейнер-родитель, содержащий и вкладки, и соцсети */
-  div:has(> .nav-tabs-bar) {
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    gap: 0.75rem !important;
-    overflow-x: auto !important;
-    scrollbar-width: none !important;
-  }
-  div:has(> .nav-tabs-bar)::-webkit-scrollbar {
-    display: none !important;
-  }
-  .nav-tabs-bar button,
-  .nav-tabs-bar a,
-  div:has(> a[href*="discord"]) a,
-  div:has(> a[href*="t.me"]) a {
-    white-space: nowrap !important;
-    flex-shrink: 0 !important;
-    padding: 0.42rem 0.72rem !important;
-    font-size: 0.8rem !important;
-    line-height: 1.2 !important;
-  }
-</style>
 
+
+
+
+
+
+
+
+<style id="portal-layout-fix">
+header, main, section, footer { position: relative; z-index: 10; }
+.bg-slate-900\/80, .bg-slate-900\/60, .bg-slate-900\/50, [class*="bg-[#"] { background-color: rgba(13, 18, 30, 0.94) !important; backdrop-filter: blur(8px); }
+.portal-nav-wrapper { display: flex !important; flex-direction: column !important; align-items: flex-start !important; gap: 0.65rem !important; width: 100% !important; }
+.portal-socials-row { order: 1 !important; display: flex !important; flex-wrap: wrap !important; align-items: center !important; gap: 0.5rem !important; }
+.portal-games-row { order: 2 !important; display: flex !important; flex-wrap: wrap !important; align-items: center !important; gap: 0.5rem !important; }
+</style>
 </head>
 <body class="text-slate-100 min-h-screen font-sans antialiased selection:bg-indigo-500/30 selection:text-indigo-200">
     <div class="space-bg">
@@ -1966,7 +1944,7 @@ fetch('/api/game-news')
 </script>
 
 
-<canvas id="space-battle-canvas" style="position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;"></canvas>
+<canvas id="space-battle-canvas" style="position:fixed;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none;"></canvas>
 <script id="space-battle-engine">
 (function() {
   // Удаляем старые фоновые canvas, если остались
@@ -2319,5 +2297,22 @@ fetch('/api/game-news')
 })();
 </script>
 
+
+
+
+
+
+
+<script id="portal-nav-reorder">
+document.addEventListener('DOMContentLoaded', () => {
+  const gBtn = Array.from(document.querySelectorAll('button, a')).find(e => e.textContent.trim().startsWith('Обзор'));
+  const sBtn = Array.from(document.querySelectorAll('a, button')).find(e => e.textContent.includes('Discord'));
+  if (gBtn && sBtn && gBtn.parentElement !== sBtn.parentElement) {
+    gBtn.parentElement.className = 'portal-games-row';
+    sBtn.parentElement.className = 'portal-socials-row';
+    if (gBtn.parentElement.parentElement) gBtn.parentElement.parentElement.className = 'portal-nav-wrapper';
+  }
+});
+</script>
 </body>
 </html>
